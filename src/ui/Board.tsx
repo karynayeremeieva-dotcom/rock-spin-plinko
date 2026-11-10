@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type PointerEvent } from 'react';
 import { binAt, binCenterX } from '../board/geometry';
 import { BoardRenderer } from '../board/renderer';
 import { formatMultiplier } from '../board/theme';
 import { calcPayout } from '../core/money';
-import { binProbabilities, getTable } from '../core/multipliers';
+import { binProbabilities, getConfig, getTable, subscribeConfig } from '../core/multipliers';
 import { useI18n } from '../i18n/context';
 import { useApp } from './app-context';
 import { useGame, useGameState } from './game-context';
@@ -23,6 +23,7 @@ export function Board() {
   const { sound } = useApp();
   const rows = useGameState((s) => s.rows);
   const risk = useGameState((s) => s.risk);
+  const config = useSyncExternalStore(subscribeConfig, getConfig);
   const reducedMotion = usePrefersReducedMotion();
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -76,8 +77,8 @@ export function Board() {
   }, [game, sound]);
 
   useEffect(() => {
-    rendererRef.current?.setLayout(rows, getTable(rows, risk));
-  }, [rows, risk]);
+    rendererRef.current?.setLayout(rows, getTable(rows, risk, config));
+  }, [rows, risk, config]);
 
   useEffect(() => {
     rendererRef.current?.setReducedMotion(reducedMotion);
@@ -114,7 +115,8 @@ function BinTooltip({ bin, x, y }: Hover) {
   const rows = useGameState((s) => s.rows);
   const risk = useGameState((s) => s.risk);
   const bet = useGameState((s) => s.bet);
-  const multiplier = getTable(rows, risk)[bin];
+  const config = useSyncExternalStore(subscribeConfig, getConfig);
+  const multiplier = getTable(rows, risk, config)[bin];
   const probability = binProbabilities(rows)[bin];
   if (multiplier === undefined || probability === undefined) return null;
 

@@ -97,9 +97,33 @@ export function getConfig(): MultiplierConfig {
   return activeConfig;
 }
 
+const configListeners = new Set<() => void>();
+
+/** For useSyncExternalStore: the board and tooltips redraw when the dev panel applies tables. */
+export function subscribeConfig(listener: () => void): () => void {
+  configListeners.add(listener);
+  return () => configListeners.delete(listener);
+}
+
 export function setConfig(config: MultiplierConfig): void {
   assertConfig(config);
   activeConfig = config;
+  configListeners.forEach((l) => l());
+}
+
+/** JSON in the same layout as the committed file: one table per line. */
+export function formatConfig(config: MultiplierConfig): string {
+  const lines = ['{'];
+  ROW_OPTIONS.forEach((rows, i) => {
+    lines.push(`  "${rows}": {`);
+    RISKS.forEach((risk, j) => {
+      const comma = j < RISKS.length - 1 ? ',' : '';
+      lines.push(`    "${risk}": [${getTable(rows, risk, config).join(', ')}]${comma}`);
+    });
+    lines.push(`  }${i < ROW_OPTIONS.length - 1 ? ',' : ''}`);
+  });
+  lines.push('}', '');
+  return lines.join('\n');
 }
 
 export function getTable(

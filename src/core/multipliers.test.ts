@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import committedJson from '../config/multipliers.json?raw';
 import {
   binProbabilities,
+  formatConfig,
   calcRtp,
   DEFAULT_CONFIG,
   getTable,
@@ -93,5 +95,12 @@ describe('validateTable', () => {
 
     const generous = validateTable(8, [10, 10, 10, 10, 10, 10, 10, 10, 10]);
     expect(generous).toEqual([{ kind: 'rtp', rtp: 10 }]);
+  });
+});
+
+describe('formatConfig', () => {
+  it('reproduces the committed JSON byte for byte', () => {
+    expect(formatConfig(DEFAULT_CONFIG)).toBe(committedJson);
+    expect(JSON.parse(formatConfig(DEFAULT_CONFIG))).toEqual(DEFAULT_CONFIG);
   });
 });
