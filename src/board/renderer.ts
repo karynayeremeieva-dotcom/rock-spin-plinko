@@ -144,6 +144,11 @@ export class BoardRenderer {
     this.wake();
   }
 
+  /** Re-renders sprites, e.g. after the web font has loaded. */
+  refresh(): void {
+    this.rebuild(false);
+  }
+
   /** Finishes every ball right now (board torn down or rebuilt). */
   landAll(): void {
     const balls = this.balls;

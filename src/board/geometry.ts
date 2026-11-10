@@ -38,7 +38,8 @@ export function computeGeometry(width: number, height: number, rows: number): Bo
   const spacing = Math.max(1, Math.min(width / (rows + 2), height / heightUnits));
   const rowGap = spacing * ROW_GAP_RATIO;
   const contentHeight = spacing * heightUnits;
-  const offsetY = Math.max(0, (height - contentHeight) / 2);
+  // Anchor to the bottom: bins sit right above the results feed, spare room stays on top.
+  const offsetY = Math.max(0, height - contentHeight);
 
   const spawnY = offsetY;
   const topY = spawnY + spacing * SPAWN_RATIO;
