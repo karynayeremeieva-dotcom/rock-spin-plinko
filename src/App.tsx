@@ -1,62 +1,98 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { play } from './api/plinko';
+import { SoundEngine } from './audio/sound';
 import { PlinkoGame } from './core/game';
-import { detectLang } from './i18n/dictionaries';
+import { loadSave, safeStorage, type Prefs } from './core/storage';
 import { useI18n } from './i18n/context';
+import { detectLang } from './i18n/dictionaries';
 import { I18nProvider } from './i18n/i18n';
-import { Board } from './ui/Board';
+import { AppContext, useApp, type AppServices } from './ui/app-context';
 import { BetPanel } from './ui/BetPanel';
+import { BigWin } from './ui/BigWin';
+import { Board } from './ui/Board';
+import { useGameNotices, useGameSounds, usePersistence, useTelegram } from './ui/effects';
 import { GameContext, useGame } from './ui/game-context';
 import { usePauseWhenHidden } from './ui/hooks';
 import { ResultsFeed } from './ui/ResultsFeed';
 import { TopBar } from './ui/TopBar';
 
 export function App() {
-  const [game] = useState(() => new PlinkoGame({ play }));
-  const [lang] = useState(detectLang);
+  const [storage] = useState(safeStorage);
+  const [boot] = useState(() => loadSave(storage));
+  const [game] = useState(() => new PlinkoGame({ play }, boot.game));
+  const [sound] = useState(() => new SoundEngine());
+  const [prefs, setPrefs] = useState<Prefs>(boot.prefs);
+  const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
+
+  const updatePrefs = useCallback(
+    (patch: Partial<Prefs>) => setPrefs((p) => ({ ...p, ...patch })),
+    [],
+  );
+  const clearToast = useCallback(() => setToast(null), []);
+  const notify = useCallback((text: string) => setToast({ key: Date.now(), text }), []);
+  const services = useMemo<AppServices>(
+    () => ({ prefs, updatePrefs, sound, notify }),
+    [prefs, updatePrefs, sound, notify],
+  );
+
   usePauseWhenHidden(game);
+  useEffect(() => {
+    // Dev builds only: lets you poke the engine from the console. Stripped from production.
+    if (import.meta.env.DEV) (window as { __plinko?: PlinkoGame }).__plinko = game;
+  }, [game]);
+  usePersistence(game, prefs, storage);
+  useTelegram(game);
+  useGameSounds(game, sound, prefs.sound);
 
   return (
-    <I18nProvider lang={lang}>
+    <I18nProvider lang={prefs.lang ?? detectLang()}>
       <GameContext.Provider value={game}>
-        <div className="stage" aria-hidden="true" />
-        <main className="app">
-          <TopBar />
-          <section className="play">
-            <Board />
-            <ResultsFeed />
-          </section>
-          <BetPanel />
-          <Toast />
-        </main>
+        <AppContext.Provider value={services}>
+          <Screen toast={toast} onToastDone={clearToast} />
+        </AppContext.Provider>
       </GameContext.Provider>
     </I18nProvider>
   );
 }
 
-/** Short notice when the server fails; the stake is already refunded by the engine. */
-function Toast() {
+function Screen({
+  toast,
+  onToastDone,
+}: {
+  toast: { key: number; text: string } | null;
+  onToastDone: () => void;
+}) {
   const { t } = useI18n();
   const game = useGame();
-  const [visible, setVisible] = useState(false);
+  const { notify } = useApp();
+  const [hit, setHit] = useState(false);
+  useGameNotices(game, t, notify);
 
+  return (
+    <>
+      <div className={`stage ${hit ? 'stage--hit' : ''}`} aria-hidden="true" />
+      <main className="app">
+        <TopBar />
+        <section className="play">
+          <Board />
+          <ResultsFeed />
+        </section>
+        <BetPanel />
+      </main>
+      <BigWin onHit={setHit} />
+      {toast && <Toast key={toast.key} text={toast.text} onDone={onToastDone} />}
+    </>
+  );
+}
+
+function Toast({ text, onDone }: { text: string; onDone: () => void }) {
   useEffect(() => {
-    let timer = 0;
-    const off = game.on((event) => {
-      if (event.type !== 'error') return;
-      setVisible(true);
-      window.clearTimeout(timer);
-      timer = window.setTimeout(() => setVisible(false), 3000);
-    });
-    return () => {
-      off();
-      window.clearTimeout(timer);
-    };
-  }, [game]);
-
-  return visible ? (
+    const timer = window.setTimeout(onDone, 3000);
+    return () => window.clearTimeout(timer);
+  }, [onDone]);
+  return (
     <div className="toast" role="status">
-      {t.errorNetwork}
+      {text}
     </div>
-  ) : null;
+  );
 }

@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import emblemUrl from '../assets/emblem.webp';
 import { useI18n } from '../i18n/context';
+import { useApp } from './app-context';
 import { useGame, useGameState } from './game-context';
 import { useAnimatedNumber, usePrefersReducedMotion } from './hooks';
+import { IconHistory, IconMenu, IconMute, IconSound } from './icons';
+import { HistorySheet, MenuSheet, RulesSheet } from './sheets';
 
 interface WinFlash {
   key: number;
@@ -10,7 +13,13 @@ interface WinFlash {
   tier: 'loss' | 'win' | 'big';
 }
 
+type OpenSheet = 'history' | 'menu' | 'rules' | null;
+
 export function TopBar() {
+  const { t } = useI18n();
+  const { prefs, updatePrefs, sound } = useApp();
+  const [open, setOpen] = useState<OpenSheet>(null);
+
   return (
     <header className="topbar">
       <div className="brand">
@@ -18,6 +27,41 @@ export function TopBar() {
         <span className="brand__name">Rock Spin</span>
       </div>
       <Balance />
+      <div className="topbar__actions">
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={prefs.sound ? t.soundOn : t.soundOff}
+          aria-pressed={!prefs.sound}
+          onClick={() => {
+            sound.unlock();
+            updatePrefs({ sound: !prefs.sound });
+          }}
+        >
+          {prefs.sound ? <IconSound /> : <IconMute />}
+        </button>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={t.history}
+          onClick={() => setOpen('history')}
+        >
+          <IconHistory />
+        </button>
+        <button
+          type="button"
+          className="icon-btn"
+          aria-label={t.menu}
+          onClick={() => setOpen('menu')}
+        >
+          <IconMenu />
+        </button>
+      </div>
+      {open === 'history' && <HistorySheet onClose={() => setOpen(null)} />}
+      {open === 'menu' && (
+        <MenuSheet onClose={() => setOpen(null)} onRules={() => setOpen('rules')} />
+      )}
+      {open === 'rules' && <RulesSheet onClose={() => setOpen(null)} />}
     </header>
   );
 }

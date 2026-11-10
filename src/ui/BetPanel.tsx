@@ -5,8 +5,10 @@ import { formatCents, parseAmount, type Cents } from '../core/money';
 import { MAX_ROWS, MIN_ROWS, RISKS, type Risk } from '../core/multipliers';
 import type { Dictionary } from '../i18n/dictionaries';
 import { useI18n } from '../i18n/context';
+import { haptics } from '../platform/telegram';
 import { useGame, useGameState } from './game-context';
-import { IconLock, IconMinus, IconPlus } from './icons';
+import { IconAuto, IconLock, IconMinus, IconPlus } from './icons';
+import { AutoSheet } from './sheets';
 
 const toInput = (cents: Cents) => formatCents(cents, { group: '', decimal: '.' });
 
@@ -32,6 +34,7 @@ export function BetPanel() {
   const risk = useGameState((s) => s.risk);
   const inFlight = useGameState((s) => s.pending + s.balls);
   const autoRunning = useGameState((s) => s.auto?.running ?? false);
+  const [autoOpen, setAutoOpen] = useState(false);
 
   // The field keeps what the player typed; the engine keeps the last valid amount.
   const [text, setText] = useState(() => toInput(bet));
@@ -53,7 +56,9 @@ export function BetPanel() {
   };
 
   const drop = useCallback(() => {
-    if (canDrop) void game.drop();
+    if (!canDrop) return;
+    haptics.impact('light');
+    void game.drop();
   }, [canDrop, game]);
 
   // Space = drop on desktop. Ignored while typing and on key repeat.
@@ -63,11 +68,13 @@ export function BetPanel() {
       const target = e.target as HTMLElement | null;
       if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
       e.preventDefault(); // also stops a focused button from being "clicked" twice
-      if (!e.repeat) drop();
+      if (e.repeat) return;
+      if (game.isAutoRunning) game.stopAuto();
+      else drop();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [drop]);
+  }, [drop, game]);
 
   return (
     <section className="panel" aria-label={t.bet}>
@@ -174,21 +181,67 @@ export function BetPanel() {
         </div>
       </div>
 
-      <button
-        type="button"
-        className="drop-btn"
-        disabled={!canDrop}
-        onClick={drop}
-        title={full ? t.ballsLimit : undefined}
-      >
-        <span className="drop-btn__label">{t.drop}</span>
-        <span className="drop-btn__hint">{t.dropHint}</span>
-        {inFlight > 0 && (
-          <span className="drop-btn__count" aria-label={t.ballsInFlight}>
-            {inFlight}
-          </span>
+      <div className="action-row">
+        <button
+          type="button"
+          className="auto-btn"
+          disabled={autoRunning || error !== null}
+          onClick={() => setAutoOpen(true)}
+        >
+          <IconAuto />
+          <span>{t.auto}</span>
+        </button>
+        {autoRunning ? (
+          <AutoRunningButton />
+        ) : (
+          <button
+            type="button"
+            className="drop-btn"
+            disabled={!canDrop}
+            onClick={drop}
+            title={full ? t.ballsLimit : undefined}
+          >
+            <span className="drop-btn__label">{t.drop}</span>
+            <span className="drop-btn__hint">{t.dropHint}</span>
+            {inFlight > 0 && (
+              <span className="drop-btn__count" aria-label={t.ballsInFlight}>
+                {inFlight}
+              </span>
+            )}
+          </button>
         )}
-      </button>
+      </div>
+      {autoOpen && <AutoSheet onClose={() => setAutoOpen(false)} />}
     </section>
+  );
+}
+
+/** While auto mode runs the main button is Stop, with rounds left and session profit. */
+function AutoRunningButton() {
+  const { t, money } = useI18n();
+  const game = useGame();
+  const left = useGameState((s) =>
+    s.auto && s.auto.config.rounds > 0
+      ? Math.max(0, s.auto.config.rounds - s.auto.progress.launched)
+      : null,
+  );
+  const profit = useGameState((s) => s.auto?.progress.profit ?? 0);
+
+  return (
+    <button type="button" className="drop-btn drop-btn--stop" onClick={() => game.stopAuto()}>
+      <span className="drop-btn__label">{t.autoStop}</span>
+      <span className="drop-btn__stats">
+        <span>
+          {t.autoLeft}: <b>{left === null ? '∞' : left}</b>
+        </span>
+        <span className={profit > 0 ? 'win' : profit < 0 ? 'loss' : ''}>
+          {t.autoProfit}:{' '}
+          <b>
+            {profit >= 0 ? '+' : '−'}
+            {money(Math.abs(profit))}
+          </b>
+        </span>
+      </span>
+    </button>
   );
 }

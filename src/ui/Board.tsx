@@ -5,6 +5,7 @@ import { formatMultiplier } from '../board/theme';
 import { calcPayout } from '../core/money';
 import { binProbabilities, getTable } from '../core/multipliers';
 import { useI18n } from '../i18n/context';
+import { useApp } from './app-context';
 import { useGame, useGameState } from './game-context';
 import { formatPercent } from './format';
 import { usePrefersReducedMotion } from './hooks';
@@ -19,6 +20,7 @@ interface Hover {
 
 export function Board() {
   const game = useGame();
+  const { sound } = useApp();
   const rows = useGameState((s) => s.rows);
   const risk = useGameState((s) => s.risk);
   const reducedMotion = usePrefersReducedMotion();
@@ -35,7 +37,10 @@ export function Board() {
 
     const renderer = new BoardRenderer(
       canvas,
-      { onLand: (id) => game.land(id) },
+      {
+        onLand: (id) => game.land(id),
+        onPegHit: (row) => sound.peg(row, game.getState().rows),
+      },
       { fontFamily: BOARD_FONT },
     );
     rendererRef.current = renderer;
@@ -68,7 +73,7 @@ export function Board() {
       // Results are already decided: credit anything still in the air.
       game.landAll();
     };
-  }, [game]);
+  }, [game, sound]);
 
   useEffect(() => {
     rendererRef.current?.setLayout(rows, getTable(rows, risk));

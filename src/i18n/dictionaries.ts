@@ -1,3 +1,5 @@
+import { telegramLanguage } from '../platform/telegram';
+
 export const LANGS = ['ru', 'en'] as const;
 export type Lang = (typeof LANGS)[number];
 
@@ -30,6 +32,55 @@ const ru = {
   decreaseRows: 'Меньше рядов',
   increaseRows: 'Больше рядов',
   loading: 'Загрузка',
+  soundOn: 'Выключить звук',
+  soundOff: 'Включить звук',
+  history: 'История',
+  menu: 'Меню',
+  close: 'Закрыть',
+  historyEmpty: 'Пока нет ставок',
+  historyTime: 'Время',
+  historyBet: 'Ставка',
+  historyGame: 'Ряды · риск',
+  historyMult: 'Коэф.',
+  historyPayout: 'Выплата',
+  language: 'Язык',
+  howToPlay: 'Как играть',
+  resetBalance: 'Сбросить демо-баланс',
+  resetConfirm: 'Точно сбросить до 1 000 RC?',
+  resetYes: 'Да, сбросить',
+  resetCancel: 'Отмена',
+  resetLocked: 'Дождитесь, пока шарики долетят и авто остановится',
+  rules1: 'Выберите ставку, число рядов (8–16) и риск.',
+  rules2: 'Нажмите «Бросить» или Пробел. Шарик отскакивает от штырьков и падает в одну из ячеек.',
+  rules3:
+    'Выигрыш = ставка × коэффициент ячейки. По краям коэффициенты выше, но туда попасть труднее.',
+  rules4: 'Чем выше риск, тем больше крайние коэффициенты и меньше центральные.',
+  rules5:
+    'Результат каждого шарика определяется до анимации генератором случайных чисел. RTP всех таблиц около 99%.',
+  rules6: 'Это демо: деньги ненастоящие, баланс можно сбросить в меню.',
+  auto: 'Авто',
+  autoTitle: 'Авто-режим',
+  autoRounds: 'Количество бросков',
+  autoRoundsHint: '0 — бесконечно',
+  autoSpeed: 'Интервал между бросками',
+  autoSeconds: 'с',
+  autoStopProfit: 'Стоп при прибыли ≥',
+  autoStopLoss: 'Стоп при убытке ≥',
+  autoStopWin: 'Стоп при выигрыше ≥',
+  autoOff: 'выкл',
+  autoStart: 'Запустить',
+  autoStop: 'Стоп',
+  autoLeft: 'Осталось',
+  autoProfit: 'Профит',
+  autoStoppedRounds: 'Авто: все броски сделаны',
+  autoStoppedProfit: 'Авто остановлен: достигнута прибыль',
+  autoStoppedLoss: 'Авто остановлен: достигнут лимит убытка',
+  autoStoppedMultiplier: 'Авто остановлен: крупный выигрыш',
+  autoStoppedBalance: 'Авто остановлен: не хватает баланса',
+  autoStoppedError: 'Авто остановлен: сервер не ответил',
+  bigWin: 'Крупный выигрыш',
+  megaWin: 'Мега-выигрыш',
+  epicWin: 'Легендарный выигрыш',
 } as const;
 
 export type Dictionary = { readonly [K in keyof typeof ru]: string };
@@ -63,6 +114,54 @@ const en: Dictionary = {
   decreaseRows: 'Fewer rows',
   increaseRows: 'More rows',
   loading: 'Loading',
+  soundOn: 'Mute sound',
+  soundOff: 'Unmute sound',
+  history: 'History',
+  menu: 'Menu',
+  close: 'Close',
+  historyEmpty: 'No bets yet',
+  historyTime: 'Time',
+  historyBet: 'Bet',
+  historyGame: 'Rows · risk',
+  historyMult: 'Mult.',
+  historyPayout: 'Payout',
+  language: 'Language',
+  howToPlay: 'How to play',
+  resetBalance: 'Reset demo balance',
+  resetConfirm: 'Reset to 1,000 RC?',
+  resetYes: 'Yes, reset',
+  resetCancel: 'Cancel',
+  resetLocked: 'Wait for the balls to land and auto mode to stop',
+  rules1: 'Pick a bet, the number of rows (8–16) and the risk.',
+  rules2: 'Press Drop or Space. The ball bounces off the pegs and falls into one of the bins.',
+  rules3: 'Win = bet × bin multiplier. Edge bins pay more but are harder to hit.',
+  rules4: 'Higher risk means bigger edge multipliers and smaller centre ones.',
+  rules5:
+    'Every ball’s result is decided by a random number generator before the animation. All tables have about 99% RTP.',
+  rules6: 'This is a demo: the money is not real, and you can reset the balance from the menu.',
+  auto: 'Auto',
+  autoTitle: 'Auto mode',
+  autoRounds: 'Number of drops',
+  autoRoundsHint: '0 = until stopped',
+  autoSpeed: 'Interval between drops',
+  autoSeconds: 's',
+  autoStopProfit: 'Stop on profit ≥',
+  autoStopLoss: 'Stop on loss ≥',
+  autoStopWin: 'Stop on single win ≥',
+  autoOff: 'off',
+  autoStart: 'Start',
+  autoStop: 'Stop',
+  autoLeft: 'Left',
+  autoProfit: 'Profit',
+  autoStoppedRounds: 'Auto: all drops done',
+  autoStoppedProfit: 'Auto stopped: profit target reached',
+  autoStoppedLoss: 'Auto stopped: loss limit reached',
+  autoStoppedMultiplier: 'Auto stopped: big win',
+  autoStoppedBalance: 'Auto stopped: not enough balance',
+  autoStoppedError: 'Auto stopped: server did not respond',
+  bigWin: 'Big win',
+  megaWin: 'Mega win',
+  epicWin: 'Legendary win',
 };
 
 export const DICTIONARIES: Record<Lang, Dictionary> = { ru, en };
@@ -74,9 +173,6 @@ export const NUMBER_FORMAT: Record<Lang, { group: string; decimal: string }> = {
 };
 
 export function detectLang(): Lang {
-  const tg = (
-    window as { Telegram?: { WebApp?: { initDataUnsafe?: { user?: { language_code?: string } } } } }
-  ).Telegram?.WebApp?.initDataUnsafe?.user?.language_code;
-  const code = (tg ?? navigator.language ?? 'en').toLowerCase();
+  const code = (telegramLanguage() ?? navigator.language ?? 'en').toLowerCase();
   return /^(ru|uk|be|kk)/.test(code) ? 'ru' : 'en';
 }

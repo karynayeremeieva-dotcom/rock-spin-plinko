@@ -17,7 +17,11 @@
   --radius: 12px;
   --gap: 8px;
   --control-h: 42px;
-  --safe-top: max(env(safe-area-inset-top), var(--tg-safe-area-inset-top, 0px));
+  /* Device notch + Telegram's own buttons that float over the app in fullscreen. */
+  --safe-top: calc(
+    max(env(safe-area-inset-top), var(--tg-safe-area-inset-top, 0px)) +
+      var(--tg-content-safe-area-inset-top, 0px)
+  );
   --safe-bottom: max(env(safe-area-inset-bottom), var(--tg-safe-area-inset-bottom, 0px));
 }
 
@@ -103,6 +107,8 @@ button:disabled {
   flex-direction: column;
   height: 100%;
   height: 100dvh;
+  /* Telegram's stable height does not jump during gestures; bottom panel sticks to it. */
+  height: var(--tg-viewport-stable-height, 100dvh);
   max-width: 480px;
   margin: 0 auto;
   padding: calc(var(--safe-top) + 8px) 10px calc(var(--safe-bottom) + 8px);
@@ -696,10 +702,521 @@ button:disabled {
   max-width: calc(100% - 32px);
   padding: 10px 14px;
   border-radius: 10px;
-  background: rgba(60, 14, 10, 0.95);
-  border: 1px solid var(--danger);
+  background: rgba(24, 22, 27, 0.96);
+  border: 1px solid var(--hot-2);
+  text-align: center;
   font-weight: 600;
   z-index: 20;
+  animation: toast-life 3s ease forwards;
+}
+
+@keyframes toast-life {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  8%,
+  85% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---------- top bar actions ---------- */
+
+.topbar .balance {
+  margin-left: auto;
+}
+
+.topbar__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--fg);
+  transition:
+    background 0.15s,
+    transform 0.08s;
+}
+
+.icon-btn:hover {
+  background: #2c2930;
+}
+
+.icon-btn:active {
+  transform: scale(0.93);
+}
+
+.icon-btn[aria-pressed='true'] {
+  color: var(--muted);
+}
+
+@media (max-width: 419px) {
+  .brand__name {
+    display: none;
+  }
+}
+
+/* ---------- action row: Auto + Drop ---------- */
+
+.action-row {
+  display: flex;
+  gap: 8px;
+}
+
+.action-row .drop-btn {
+  flex: 1 1 auto;
+}
+
+.auto-btn {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 64px;
+  border-radius: 14px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition:
+    background 0.15s,
+    transform 0.08s;
+}
+
+.auto-btn:hover:not(:disabled) {
+  background: #2c2930;
+  border-color: var(--hot-2);
+}
+
+.auto-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.auto-btn:disabled {
+  opacity: 0.4;
+}
+
+.drop-btn--stop {
+  flex-direction: column;
+  gap: 0;
+  background: linear-gradient(180deg, #ff5a4a 0%, #d8261c 100%);
+  color: #fff;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.2) inset,
+    0 6px 24px rgba(220, 40, 30, 0.45);
+}
+
+.drop-btn--stop .drop-btn__label {
+  font-size: 18px;
+  line-height: 1.1;
+}
+
+.drop-btn__stats {
+  display: flex;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.drop-btn__stats .win {
+  color: #d6ffb0;
+}
+
+.drop-btn__stats .loss {
+  color: #ffd2cc;
+}
+
+/* ---------- sheets ---------- */
+
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  animation: fade-in 0.18s ease-out;
+}
+
+.sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 480px;
+  max-height: 85dvh;
+  padding: 14px 14px calc(var(--safe-bottom) + 14px);
+  border-radius: 20px 20px 0 0;
+  background: #141317;
+  border: 1px solid var(--line-strong);
+  border-bottom: 0;
+  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.6);
+  outline: none;
+  animation: sheet-up 0.24s cubic-bezier(0.2, 0.9, 0.3, 1);
+  user-select: text;
+}
+
+.sheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.sheet__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sheet__body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 1024px) {
+  .sheet-backdrop {
+    align-items: center;
+  }
+
+  .sheet {
+    max-width: 560px;
+    border-radius: 20px;
+    border-bottom: 1px solid var(--line-strong);
+    padding-bottom: 18px;
+  }
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(40px);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.history {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.history th {
+  position: sticky;
+  top: 0;
+  padding: 6px 4px;
+  background: #141317;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.history td {
+  padding: 7px 4px;
+  border-top: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.history .num {
+  text-align: right;
+}
+
+.history .win {
+  color: #9be36b;
+  font-weight: 700;
+}
+
+.history .loss {
+  color: #ff8a7a;
+}
+
+.mult-chip {
+  display: inline-block;
+  min-width: 44px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  color: #140d08;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.rules {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.5;
+}
+
+.rules li + li {
+  margin-top: 8px;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.menu__item {
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  font-weight: 700;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.menu__item:hover:not(:disabled) {
+  background: #2c2930;
+}
+
+.menu__item:disabled {
+  opacity: 0.45;
+}
+
+.menu__item--danger {
+  color: #ff8a7a;
+}
+
+.menu__confirm {
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--danger);
+  background: rgba(255, 77, 77, 0.08);
+}
+
+.menu__confirm p {
+  margin: 0 0 10px;
+  font-weight: 600;
+}
+
+.menu__confirm-row {
+  display: flex;
+  gap: 8px;
+}
+
+.menu__confirm-row .chip {
+  flex: 1;
+}
+
+.chip--danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #1a0503;
+}
+
+.chip--danger:hover:not(:disabled) {
+  background: #ff6b6b;
+}
+
+.auto-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auto-form__stops {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.field__hint,
+.field__value {
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+.field__value {
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.range {
+  width: 100%;
+  accent-color: var(--hot);
+}
+
+/* ---------- big win ---------- */
+
+.bigwin {
+  position: fixed;
+  inset: 0;
+  z-index: 25;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.bigwin__flash {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(255, 200, 90, 0.75),
+    rgba(255, 90, 20, 0.35) 35%,
+    transparent 70%
+  );
+  animation: bigwin-flash 2.2s ease-out forwards;
+}
+
+.bigwin__poster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  animation: bigwin-in 2.2s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+
+.bigwin__title {
+  padding: 4px 14px;
+  border-radius: 6px;
+  background: #140d08;
+  border: 2px solid var(--hot-2);
+  color: var(--hot-2);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transform: rotate(-3deg);
+}
+
+.bigwin__mult {
+  font-family: var(--font-display);
+  font-size: clamp(84px, 30vw, 180px);
+  font-weight: 700;
+  line-height: 0.95;
+  background: linear-gradient(180deg, #fff6d8 0%, #ffc24a 35%, #ff6a1a 70%, #c7220c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 24px rgba(255, 106, 26, 0.75)) drop-shadow(0 4px 0 #3a1204);
+}
+
+.bigwin__payout {
+  margin-top: 4px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: rgba(20, 13, 8, 0.85);
+  color: var(--win);
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.bigwin--mega .bigwin__title,
+.bigwin--epic .bigwin__title {
+  background: var(--hot);
+  color: #140d08;
+}
+
+.bigwin--epic .bigwin__flash {
+  background: radial-gradient(
+    circle at 50% 45%,
+    rgba(255, 245, 210, 0.9),
+    rgba(255, 106, 26, 0.5) 40%,
+    rgba(47, 125, 255, 0.15) 75%,
+    transparent
+  );
+}
+
+@keyframes bigwin-flash {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes bigwin-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-6deg);
+  }
+  14% {
+    opacity: 1;
+    transform: scale(1.08) rotate(1deg);
+  }
+  22% {
+    transform: scale(1) rotate(0);
+  }
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.05) translateY(-10px);
+  }
+}
+
+/* The stage "kicks" like a bass drop. */
+.stage--hit {
+  animation: stage-hit 0.5s ease-out;
+}
+
+@keyframes stage-hit {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  15% {
+    transform: scale(1.04) translate(-4px, 3px);
+    filter: brightness(1.6);
+  }
+  35% {
+    transform: scale(1.02) translate(3px, -2px);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
 }
 
 /* ---------- short phones (360×640 and similar) ---------- */
@@ -810,5 +1327,22 @@ button:disabled {
   *::after {
     animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Still show results, just without motion. */
+  .toast,
+  .bigwin__poster,
+  .balance__flash {
+    animation: none !important;
+  }
+
+  .bigwin__flash,
+  .stage--hit {
+    animation: none !important;
+    opacity: 0;
+  }
+
+  .stage--hit {
+    opacity: 1;
   }
 }
