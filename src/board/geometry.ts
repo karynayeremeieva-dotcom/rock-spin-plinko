@@ -82,7 +82,8 @@ export function binCenterX(g: BoardGeometry, bin: number): number {
 /** Bin under the point, or -1. Used for hover / tap tooltips. */
 export function binAt(g: BoardGeometry, x: number, y: number): number {
   if (y < g.binTop || y > g.binTop + g.binHeight) return -1;
-  const bin = Math.round((x - g.centerX) / g.spacing + g.rows / 2);
+  // `+ 0` turns Math.round's -0 (points just left of bin 0's centre) into 0.
+  const bin = Math.round((x - g.centerX) / g.spacing + g.rows / 2) + 0;
   if (bin < 0 || bin > g.rows) return -1;
   return Math.abs(x - binCenterX(g, bin)) <= g.binWidth / 2 ? bin : -1;
 }
