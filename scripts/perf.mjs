@@ -190,6 +190,13 @@ async function soak(browser) {
     set(document.querySelector('.auto-form .range'), '150');
   });
   await page.click('.auto-form button[type=submit]');
+  // Count landings: every landed ball prepends a chip to the results feed.
+  await page.evaluate(() => {
+    window.__landed = 0;
+    new MutationObserver((records) => {
+      for (const r of records) window.__landed += r.addedNodes.length;
+    }).observe(document.querySelector('.feed'), { childList: true });
+  });
 
   const metric = async () => {
     await cdp.send('HeapProfiler.collectGarbage');
@@ -205,7 +212,8 @@ async function soak(browser) {
     const m = await metric();
     const state = await page.evaluate(() => ({
       running: !!document.querySelector('.drop-btn--stop'),
-      history: document.querySelectorAll('.feed__chip').length,
+      landed: window.__landed,
+      balance: document.querySelector('.balance__value')?.textContent,
     }));
     const sample = {
       minute: +((Date.now() - started) / 60000).toFixed(1),
@@ -227,6 +235,7 @@ async function soak(browser) {
     nodeGrowth: last.nodes - first.nodes,
     fpsFirst: first.fps,
     fpsLast: last.fps,
+    landed: last.landed,
   };
 }
 
