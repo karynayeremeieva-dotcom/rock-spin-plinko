@@ -30,4 +30,9 @@ export default tseslint.config(
     extends: [js.configs.recommended, prettier],
     languageOptions: { globals: globals.node },
   },
+  {
+    // Parts of the perf script run inside the page via page.evaluate().
+    files: ['scripts/perf.mjs'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
 );
