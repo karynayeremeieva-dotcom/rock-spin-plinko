@@ -13,7 +13,8 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "gen:multipliers": "node scripts/generate-multipliers.mjs"
+    "gen:multipliers": "node scripts/generate-multipliers.mjs",
+    "check": "tsc -b && eslint . && prettier --check . && node scripts/generate-multipliers.mjs --check && vitest run"
   },
   "dependencies": {
     "react": "18.3.1",
@@ -35,5 +36,8 @@
     "typescript-eslint": "8.71.2",
     "vite": "7.3.7",
     "vitest": "4.1.12"
+  },
+  "engines": {
+    "node": ">=20.19"
   }
 }
