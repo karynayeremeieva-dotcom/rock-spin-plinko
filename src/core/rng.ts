@@ -26,3 +26,25 @@ export function randomInt(min: number, max: number, randomBytes: RandomBytes): n
 export function randomId(randomBytes: RandomBytes): string {
   return Array.from(randomBytes(16), (b) => b.toString(16).padStart(2, '0')).join('');
 }
+
+/**
+ * Same source, fetched in 64 KB batches. crypto.getRandomValues accepts at most
+ * 65 536 bytes per call; batching makes 100 000-ball simulations several times faster.
+ */
+export function pooledRandomBytes(
+  source: RandomBytes = cryptoRandomBytes,
+  poolSize = 65_536,
+): RandomBytes {
+  let pool: Uint8Array = new Uint8Array(0);
+  let offset = 0;
+  return (length) => {
+    if (length > poolSize) return source(length);
+    if (offset + length > pool.length) {
+      pool = source(poolSize);
+      offset = 0;
+    }
+    const out = pool.subarray(offset, offset + length);
+    offset += length;
+    return out;
+  };
+}

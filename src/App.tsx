@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { play } from './api/plinko';
 import { SoundEngine } from './audio/sound';
 import { PlinkoGame } from './core/game';
@@ -15,6 +15,10 @@ import { GameContext, useGame } from './ui/game-context';
 import { usePauseWhenHidden } from './ui/hooks';
 import { ResultsFeed } from './ui/ResultsFeed';
 import { TopBar } from './ui/TopBar';
+
+// The multiplier editor is a separate chunk, downloaded only with ?dev=1 in the URL.
+const DevPanel = lazy(() => import('./dev/DevPanel'));
+const DEV_MODE = new URLSearchParams(window.location.search).get('dev') === '1';
 
 export function App() {
   const [storage] = useState(safeStorage);
@@ -80,6 +84,11 @@ function Screen({
         <BetPanel />
       </main>
       <BigWin onHit={setHit} />
+      {DEV_MODE && (
+        <Suspense fallback={null}>
+          <DevPanel />
+        </Suspense>
+      )}
       {toast && <Toast key={toast.key} text={toast.text} onDone={onToastDone} />}
     </>
   );

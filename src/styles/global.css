@@ -1219,6 +1219,192 @@ button:disabled {
   }
 }
 
+/* ---------- ?dev=1 multiplier panel ---------- */
+
+.dev-toggle {
+  position: fixed;
+  left: 10px;
+  top: calc(var(--safe-top) + 60px);
+  z-index: 22;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px dashed var(--hot-2);
+  background: rgba(20, 13, 8, 0.9);
+  color: var(--hot-2);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.dev {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dev__controls {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  gap: 10px;
+}
+
+.dev__select {
+  height: var(--control-h);
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  font: inherit;
+  font-weight: 700;
+  color: var(--fg);
+}
+
+.dev__check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.dev__check input {
+  accent-color: var(--hot);
+  width: 16px;
+  height: 16px;
+}
+
+.dev__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.dev__table th {
+  padding: 4px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.dev__table td {
+  padding: 3px 4px;
+  border-top: 1px solid var(--line);
+}
+
+.dev__table .num {
+  text-align: right;
+}
+
+.dev__input {
+  width: 90px;
+  height: 30px;
+  padding: 0 8px;
+  border-radius: 7px;
+  border: 1px solid var(--line-strong);
+  background: var(--panel-2);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  outline: none;
+  user-select: text;
+}
+
+.dev__input:focus {
+  border-color: var(--hot-2);
+}
+
+.dev__input--error,
+.dev__input--error:focus {
+  border-color: var(--danger);
+  background: rgba(255, 77, 77, 0.1);
+}
+
+.dev__rtp {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(120, 200, 90, 0.12);
+  border: 1px solid rgba(120, 200, 90, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.dev__rtp--warn {
+  background: rgba(255, 77, 77, 0.1);
+  border-color: var(--danger);
+}
+
+.dev__warnings {
+  margin: 0;
+  padding-left: 18px;
+  color: #ff8a7a;
+  font-size: 13px;
+}
+
+.dev__ok {
+  color: #9be36b;
+  list-style: '✓ ';
+}
+
+.dev__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dev__actions .chip {
+  flex: 1 1 auto;
+}
+
+.chip--primary {
+  background: var(--hot);
+  border-color: var(--hot);
+  color: #1a0b02;
+}
+
+.chip--primary:hover:not(:disabled) {
+  background: #ff7d33;
+}
+
+.chip--wide {
+  width: 100%;
+}
+
+.dev__sim {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.dev__progress {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.dev__progress div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--hot), var(--hot-2));
+}
+
+.dev__result {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 12px;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.dev__result dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+}
+
 /* ---------- short phones (360×640 and similar) ---------- */
 
 @media (max-height: 700px) {
