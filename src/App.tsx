@@ -1,116 +1,62 @@
 import { useEffect, useState } from 'react';
 import { play } from './api/plinko';
-import emblemUrl from './assets/emblem.webp';
 import { PlinkoGame } from './core/game';
-import { formatCents, parseAmount } from './core/money';
-import { RISKS, ROW_OPTIONS, type Risk } from './core/multipliers';
+import { detectLang } from './i18n/dictionaries';
+import { useI18n } from './i18n/context';
+import { I18nProvider } from './i18n/i18n';
 import { Board } from './ui/Board';
-import { GameContext, useGame, useGameState } from './ui/game-context';
+import { BetPanel } from './ui/BetPanel';
+import { GameContext, useGame } from './ui/game-context';
 import { usePauseWhenHidden } from './ui/hooks';
+import { ResultsFeed } from './ui/ResultsFeed';
+import { TopBar } from './ui/TopBar';
 
 export function App() {
   const [game] = useState(() => new PlinkoGame({ play }));
+  const [lang] = useState(detectLang);
   usePauseWhenHidden(game);
 
   return (
-    <GameContext.Provider value={game}>
-      <div className="stage" aria-hidden="true" />
-      <main className="app">
-        <header className="topbar">
-          <div className="brand">
-            <img className="brand__emblem" src={emblemUrl} alt="" width={36} height={36} />
-            <span className="brand__name">Rock Spin</span>
-          </div>
-          <Balance />
-        </header>
-        <Board />
-        <DevControls />
-      </main>
-    </GameContext.Provider>
+    <I18nProvider lang={lang}>
+      <GameContext.Provider value={game}>
+        <div className="stage" aria-hidden="true" />
+        <main className="app">
+          <TopBar />
+          <section className="play">
+            <Board />
+            <ResultsFeed />
+          </section>
+          <BetPanel />
+          <Toast />
+        </main>
+      </GameContext.Provider>
+    </I18nProvider>
   );
 }
 
-function Balance() {
-  const balance = useGameState((s) => s.balance);
-  return <div className="balance">{formatCents(balance)} RC</div>;
-}
-
-/** Temporary controls for stage 2; the real panel comes in stage 3. */
-function DevControls() {
+/** Short notice when the server fails; the stake is already refunded by the engine. */
+function Toast() {
+  const { t } = useI18n();
   const game = useGame();
-  const rows = useGameState((s) => s.rows);
-  const risk = useGameState((s) => s.risk);
-  const inFlight = useGameState((s) => s.pending + s.balls);
-  const autoRunning = useGameState((s) => s.auto?.running ?? false);
-  const [betText, setBetText] = useState('1.00');
+  const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !(e.target instanceof HTMLInputElement)) {
-        e.preventDefault();
-        void game.drop();
-      }
+    let timer = 0;
+    const off = game.on((event) => {
+      if (event.type !== 'error') return;
+      setVisible(true);
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => setVisible(false), 3000);
+    });
+    return () => {
+      off();
+      window.clearTimeout(timer);
     };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
   }, [game]);
 
-  const locked = inFlight > 0 || autoRunning;
-  return (
-    <div className="dev-controls">
-      <input
-        value={betText}
-        onChange={(e) => {
-          setBetText(e.target.value);
-          const cents = parseAmount(e.target.value);
-          if (cents !== null) game.setBet(cents);
-        }}
-        inputMode="decimal"
-        aria-label="Bet"
-      />
-      <select
-        value={rows}
-        disabled={locked}
-        onChange={(e) => game.setRows(Number(e.target.value))}
-        aria-label="Rows"
-      >
-        {ROW_OPTIONS.map((r) => (
-          <option key={r} value={r}>
-            {r}
-          </option>
-        ))}
-      </select>
-      <select
-        value={risk}
-        disabled={locked}
-        onChange={(e) => game.setRisk(e.target.value as Risk)}
-        aria-label="Risk"
-      >
-        {RISKS.map((r) => (
-          <option key={r} value={r}>
-            {r}
-          </option>
-        ))}
-      </select>
-      <button type="button" onClick={() => void game.drop()} disabled={autoRunning}>
-        Drop ({inFlight})
-      </button>
-      <button
-        type="button"
-        onClick={() =>
-          autoRunning
-            ? game.stopAuto()
-            : game.startAuto({
-                rounds: 0,
-                intervalMs: 150,
-                stopOnProfit: null,
-                stopOnLoss: null,
-                stopOnMultiplier: null,
-              })
-        }
-      >
-        {autoRunning ? 'Stop' : 'Auto'}
-      </button>
+  return visible ? (
+    <div className="toast" role="status">
+      {t.errorNetwork}
     </div>
-  );
+  ) : null;
 }
