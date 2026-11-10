@@ -1,0 +1,31 @@
+:root {
+  color-scheme: dark;
+  --bg: #0b0b0d;
+  --fg: #f2efe9;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  display: grid;
+  place-items: center;
+  height: 100%;
+}
