@@ -16,7 +16,8 @@
     "gen:multipliers": "node scripts/generate-multipliers.mjs",
     "check": "tsc -b && eslint . && prettier --check . && node scripts/generate-multipliers.mjs --check && vitest run",
     "perf": "node scripts/perf.mjs",
-    "perf:soak": "node scripts/perf.mjs --soak"
+    "perf:soak": "node scripts/perf.mjs --soak",
+    "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",
