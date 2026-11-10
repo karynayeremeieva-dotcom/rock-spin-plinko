@@ -20,9 +20,7 @@ body,
 }
 
 body {
-  background:
-    radial-gradient(120% 60% at 50% 0%, rgba(255, 106, 26, 0.18), transparent 60%),
-    radial-gradient(80% 50% at 50% 100%, rgba(47, 125, 255, 0.1), transparent 70%), var(--bg);
+  background: var(--bg);
   color: var(--fg);
   font-family: system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -39,11 +37,62 @@ body {
   gap: 12px;
 }
 
+/* Concert stage behind everything. The image loads lazily as a CSS background,
+   so it never blocks the first paint; the dark base colour shows until then. */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: url('../assets/bg-stage-vertical.webp') center top / cover no-repeat var(--bg);
+}
+
+@media (min-aspect-ratio: 1/1) {
+  .stage {
+    background-image: url('../assets/bg-stage-wide.webp');
+    background-position: center;
+  }
+}
+
+/* Darken the middle so the board stays readable over the smoke. */
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(70% 45% at 50% 52%, rgba(6, 6, 8, 0.7), rgba(6, 6, 8, 0.25) 75%, transparent),
+    linear-gradient(to bottom, transparent 70%, rgba(6, 6, 8, 0.85));
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand__emblem {
+  width: 36px;
+  height: 36px;
+  filter: drop-shadow(0 0 8px rgba(255, 106, 26, 0.45));
+}
+
+.brand__name {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .balance {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  text-align: center;
 }
 
 .board {

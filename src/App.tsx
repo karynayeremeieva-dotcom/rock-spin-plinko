@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { play } from './api/plinko';
+import emblemUrl from './assets/emblem.webp';
 import { PlinkoGame } from './core/game';
 import { formatCents, parseAmount } from './core/money';
 import { RISKS, ROW_OPTIONS, type Risk } from './core/multipliers';
@@ -13,8 +14,15 @@ export function App() {
 
   return (
     <GameContext.Provider value={game}>
+      <div className="stage" aria-hidden="true" />
       <main className="app">
-        <Balance />
+        <header className="topbar">
+          <div className="brand">
+            <img className="brand__emblem" src={emblemUrl} alt="" width={36} height={36} />
+            <span className="brand__name">Rock Spin</span>
+          </div>
+          <Balance />
+        </header>
         <Board />
         <DevControls />
       </main>
