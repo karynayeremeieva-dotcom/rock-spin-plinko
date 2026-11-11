@@ -12,7 +12,8 @@
  *   pauses the flight and balls continue from the same spot when the tab comes back.
  */
 import type { Direction } from '../core/rng';
-import { CABINET_HAS_NEON, CABINET_LAYOUT, CABINET_URL } from './cabinet';
+import type { Skin } from '../core/storage';
+import { CABINET_HAS_NEON, CABINETS, type CabinetLayout } from './cabinet';
 import {
   NEON_GAP,
   NEON_MARGIN,
@@ -46,6 +47,8 @@ export interface RendererCallbacks {
 export interface RendererOptions {
   reducedMotion?: boolean;
   fontFamily?: string;
+  /** Board design; see setSkin. */
+  skin?: Skin;
 }
 
 interface LiveBall {
@@ -89,6 +92,8 @@ export class BoardRenderer {
   /** Machine cabinet art; the board is laid out inside it once the image has loaded. */
   private cabinetImg: HTMLImageElement | null = null;
   private cabinetLayer: HTMLCanvasElement | null = null;
+  private skin: Skin = 'guitar';
+  private cabinetLayout: CabinetLayout = CABINETS.guitar.layout;
   /** Peg index range per row of the play pyramid (strings run across it). */
   private pegRange: [number, number][] = [];
   private neonScheme: NeonScheme = 'cool';
@@ -114,7 +119,11 @@ export class BoardRenderer {
   constructor(
     private readonly canvas: HTMLCanvasElement,
     callbacks: RendererCallbacks,
-    { reducedMotion = false, fontFamily = 'system-ui, sans-serif' }: RendererOptions = {},
+    {
+      reducedMotion = false,
+      fontFamily = 'system-ui, sans-serif',
+      skin = 'guitar',
+    }: RendererOptions = {},
   ) {
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Canvas 2D is not available');
@@ -126,16 +135,7 @@ export class BoardRenderer {
         .load("700 16px 'Oswald Variable'")
         .then(() => !this.destroyed && this.rebuild(false));
     }
-    if (typeof Image !== 'undefined') {
-      const img = new Image();
-      img.decoding = 'async';
-      img.onload = () => {
-        if (this.destroyed) return;
-        this.cabinetImg = img;
-        this.rebuild(false);
-      };
-      img.src = CABINET_URL;
-    }
+    this.loadCabinet(skin);
     this.reducedMotion = reducedMotion;
     this.fontFamily = fontFamily;
   }
@@ -196,6 +196,27 @@ export class BoardRenderer {
   }
 
   /** Switches the neon colours inside the cabinet. */
+  /** Swaps the cabinet art (board design); the board is laid out again once it loads. */
+  setSkin(skin: Skin): void {
+    if (skin === this.skin) return;
+    this.loadCabinet(skin);
+  }
+
+  private loadCabinet(skin: Skin): void {
+    this.skin = skin;
+    if (typeof Image === 'undefined') return;
+    const { url, layout } = CABINETS[skin];
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => {
+      if (this.destroyed || this.skin !== skin) return;
+      this.cabinetImg = img;
+      this.cabinetLayout = layout;
+      this.rebuild(false);
+    };
+    img.src = url;
+  }
+
   setNeonScheme(scheme: NeonScheme): void {
     if (scheme === this.neonScheme) return;
     this.neonScheme = scheme;
@@ -227,7 +248,7 @@ export class BoardRenderer {
     let g: BoardGeometry;
     this.cabinetLayer = null;
     if (this.cabinetImg) {
-      const fit = computeCabinetGeometry(this.width, this.height, this.rows, CABINET_LAYOUT);
+      const fit = computeCabinetGeometry(this.width, this.height, this.rows, this.cabinetLayout);
       g = fit.geometry;
       this.cabinetLayer = this.buildCabinetLayer(fit.cabinet, g, fit.field);
     } else {
@@ -453,7 +474,7 @@ export class BoardRenderer {
     const lastRow = rows - 1;
     const chuteRows = Math.max(2, Math.round(rows * 0.3));
     const stepRow = Math.max(1, Math.round(chuteRows / 2) - 1);
-    const { field: f } = CABINET_LAYOUT;
+    const { field: f } = this.cabinetLayout;
     const fieldLeftAt = (y: number) => {
       const t = (y - (cab.y + f.top * cab.h)) / ((f.bottom - f.top) * cab.h);
       return cab.x + (f.leftTop + (f.leftBottom - f.leftTop) * t) * cab.w;

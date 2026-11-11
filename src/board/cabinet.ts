@@ -3,7 +3,9 @@
  * and bin shelf are, as fractions of the image. Measured on `art/cabinet-guitar.png`
  * (1016×1414, cropped to the guitar from `art/cabinet-guitar-source.webp`).
  */
+import ampUrl from '../assets/cabinet-amp.webp';
 import cabinetUrl from '../assets/cabinet.webp';
+import type { Skin } from '../core/storage';
 
 export interface CabinetLayout {
   /** Image width / height. */
@@ -50,6 +52,32 @@ export const CABINET_LAYOUT: CabinetLayout = {
 };
 
 export const CABINET_URL: string = cabinetUrl;
+
+/**
+ * Second design: a guitar amp head (tolex, gold piping, tubes over the spawn point).
+ * Measured on `art/cabinet-amp.png` (1024×1300, cropped from `art/cabinet-amp-source.webp`).
+ */
+export const AMP_LAYOUT: CabinetLayout = {
+  aspect: 1024 / 1300,
+  field: {
+    top: 0.0885,
+    bottom: 0.8459,
+    leftTop: 0.164,
+    rightTop: 0.831,
+    leftBottom: 0.0625,
+    rightBottom: 0.9385,
+    corner: 8 / 1300,
+    topCorner: 8 / 1300,
+  },
+  channels: { top: 0.8281, bottom: 0.8459 },
+  shelf: { top: 0.8577, bottom: 0.9227, left: 0.049, right: 0.952 },
+  maxOverflow: 1,
+};
+
+export const CABINETS: Record<Skin, { url: string; layout: CabinetLayout }> = {
+  guitar: { url: cabinetUrl, layout: CABINET_LAYOUT },
+  amp: { url: ampUrl, layout: AMP_LAYOUT },
+};
 
 /** The art carries its own colour; code draws only the steel bin dividers. */
 export const CABINET_HAS_NEON = true;

@@ -10,10 +10,16 @@ export const STORAGE_KEY = 'rockspin.plinko.v1';
 
 export type Lang = 'ru' | 'en';
 
+/** Two board designs: a V-shaped guitar body or a guitar amp. */
+export type Skin = 'guitar' | 'amp';
+
+export const isSkin = (v: unknown): v is Skin => v === 'guitar' || v === 'amp';
+
 export interface Prefs {
   sound: boolean;
   /** null = detect from Telegram / browser. */
   lang: Lang | null;
+  skin: Skin;
   auto: AutoConfig;
 }
 
@@ -25,7 +31,7 @@ export const DEFAULT_AUTO: AutoConfig = {
   stopOnMultiplier: null,
 };
 
-export const DEFAULT_PREFS: Prefs = { sound: true, lang: null, auto: DEFAULT_AUTO };
+export const DEFAULT_PREFS: Prefs = { sound: true, lang: null, skin: 'guitar', auto: DEFAULT_AUTO };
 
 export interface SaveData {
   game: Partial<PersistedGame>;
@@ -88,6 +94,7 @@ function parsePrefs(value: unknown): Prefs {
   return {
     sound: typeof value.sound === 'boolean' ? value.sound : DEFAULT_PREFS.sound,
     lang: value.lang === 'ru' || value.lang === 'en' ? value.lang : null,
+    skin: isSkin(value.skin) ? value.skin : DEFAULT_PREFS.skin,
     auto: normalizeAutoConfig({
       rounds: num(auto.rounds, DEFAULT_AUTO.rounds) ?? DEFAULT_AUTO.rounds,
       intervalMs: num(auto.intervalMs, DEFAULT_AUTO.intervalMs) ?? DEFAULT_AUTO.intervalMs,

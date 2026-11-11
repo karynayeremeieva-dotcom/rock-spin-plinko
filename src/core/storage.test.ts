@@ -44,6 +44,7 @@ describe('storage', () => {
     const prefs: Prefs = {
       sound: false,
       lang: 'en',
+      skin: 'amp',
       auto: { ...DEFAULT_PREFS.auto, rounds: 0, stopOnMultiplier: 10 },
     };
     writeSave(storage, { game: game.toPersisted(), prefs });
@@ -68,6 +69,12 @@ describe('storage', () => {
     storage.setItem(STORAGE_KEY, JSON.stringify([1, 2, 3]));
     expect(loadSave(storage)).toEqual({ game: {}, prefs: DEFAULT_PREFS });
     expect(loadSave(null)).toEqual({ game: {}, prefs: DEFAULT_PREFS });
+  });
+
+  it('falls back to the guitar design for an unknown skin', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(STORAGE_KEY, JSON.stringify({ prefs: { skin: 'banjo' } }));
+    expect(loadSave(storage).prefs.skin).toBe('guitar');
   });
 
   it('drops invalid fields one by one', () => {

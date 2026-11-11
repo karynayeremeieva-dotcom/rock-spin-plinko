@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createFakeServer } from '../api/plinko';
 import { ROW_OPTIONS } from '../core/multipliers';
 import type { Direction } from '../core/rng';
-import { CABINET_LAYOUT } from './cabinet';
+import { AMP_LAYOUT, CABINET_LAYOUT } from './cabinet';
 import {
   binAt,
   binCenterX,
@@ -123,7 +123,10 @@ describe('trajectory', () => {
   });
 });
 
-describe('cabinet layout', () => {
+describe.each([
+  ['guitar', CABINET_LAYOUT],
+  ['amp', AMP_LAYOUT],
+] as const)('cabinet layout: %s', (_name, layout) => {
   const sizes: [number, number][] = [
     [370, 470],
     [340, 372],
@@ -133,8 +136,8 @@ describe('cabinet layout', () => {
 
   it.each(ROW_OPTIONS)('%i rows: pyramid stays inside the neon, bins sit on the shelf', (rows) => {
     for (const [w, h] of sizes) {
-      const { geometry: g, cabinet: c } = computeCabinetGeometry(w, h, rows, CABINET_LAYOUT);
-      const { field, shelf } = CABINET_LAYOUT;
+      const { geometry: g, cabinet: c } = computeCabinetGeometry(w, h, rows, layout);
+      const { field, shelf } = layout;
       const fieldEdge = (y: number, side: 'left' | 'right') => {
         const t = (y - (c.y + field.top * c.h)) / ((field.bottom - field.top) * c.h);
         const top = side === 'left' ? field.leftTop : field.rightTop;
@@ -168,7 +171,7 @@ describe('cabinet layout', () => {
   it('balls land in the bin from play() inside the cabinet', async () => {
     const play = createFakeServer({ sleep: () => Promise.resolve() });
     for (const rows of [8, 16]) {
-      const { geometry: g } = computeCabinetGeometry(370, 470, rows, CABINET_LAYOUT);
+      const { geometry: g } = computeCabinetGeometry(370, 470, rows, layout);
       for (let i = 0; i < 300; i++) {
         const result = await play({ bet: 100, rows, risk: 'high' });
         const tr = buildTrajectory(g, result.path);

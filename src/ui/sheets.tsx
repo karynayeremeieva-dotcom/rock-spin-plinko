@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { formatMultiplier } from '../board/theme';
 import { AUTO_MAX_INTERVAL, AUTO_MIN_INTERVAL, type AutoConfig } from '../core/auto';
 import { validateBet } from '../core/bet';
+import type { Skin } from '../core/storage';
 import { formatCents, parseAmount } from '../core/money';
 import { useI18n } from '../i18n/context';
 import { LANGS, type Dictionary } from '../i18n/dictionaries';
@@ -10,6 +11,8 @@ import { useApp } from './app-context';
 import { binTint } from './format';
 import { useGame, useGameState } from './game-context';
 import { Sheet } from './Sheet';
+
+const SKINS: readonly Skin[] = ['guitar', 'amp'];
 
 const RISK_SHORT: Record<string, keyof Dictionary> = {
   low: 'riskLow',
@@ -141,7 +144,7 @@ export function HistorySheet({ onClose }: { onClose: () => void }) {
 
 export function MenuSheet({ onClose, onRules }: { onClose: () => void; onRules: () => void }) {
   const { t, lang } = useI18n();
-  const { updatePrefs } = useApp();
+  const { prefs, updatePrefs } = useApp();
   const game = useGame();
   const busy = useGameState((s) => s.pending + s.balls > 0 || (s.auto?.running ?? false));
   const [confirm, setConfirm] = useState(false);
@@ -167,6 +170,29 @@ export function MenuSheet({ onClose, onRules }: { onClose: () => void; onRules: 
                 }}
               >
                 {l === 'ru' ? 'Русский' : 'English'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="field">
+          <span className="field__label" id="skin-label">
+            {t.design}
+          </span>
+          <div className="segmented" role="radiogroup" aria-labelledby="skin-label">
+            {SKINS.map((skin) => (
+              <button
+                key={skin}
+                type="button"
+                role="radio"
+                aria-checked={prefs.skin === skin}
+                className="segmented__item segmented__item--medium"
+                onClick={() => {
+                  haptics.select();
+                  updatePrefs({ skin });
+                }}
+              >
+                {skin === 'guitar' ? t.skinGuitar : t.skinAmp}
               </button>
             ))}
           </div>

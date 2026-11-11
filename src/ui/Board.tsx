@@ -21,7 +21,9 @@ interface Hover {
 
 export function Board() {
   const game = useGame();
-  const { sound } = useApp();
+  const { sound, prefs } = useApp();
+  // The renderer is created once; it starts with the design chosen at that moment.
+  const skinRef = useRef(prefs.skin);
   const rows = useGameState((s) => s.rows);
   const risk = useGameState((s) => s.risk);
   const config = useSyncExternalStore(subscribeConfig, getConfig);
@@ -43,7 +45,7 @@ export function Board() {
         onLand: (id) => game.land(id),
         onPegHit: (row) => sound.peg(row, game.getState().rows),
       },
-      { fontFamily: BOARD_FONT },
+      { fontFamily: BOARD_FONT, skin: skinRef.current },
     );
     rendererRef.current = renderer;
     const { rows: r, risk: k } = game.getState();
@@ -98,6 +100,11 @@ export function Board() {
   useEffect(() => {
     rendererRef.current?.setReducedMotion(reducedMotion);
   }, [reducedMotion]);
+
+  useEffect(() => {
+    skinRef.current = prefs.skin;
+    rendererRef.current?.setSkin(prefs.skin);
+  }, [prefs.skin]);
 
   const findBin = (e: PointerEvent<HTMLCanvasElement>): Hover | null => {
     const g = rendererRef.current?.getGeometry();

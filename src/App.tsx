@@ -2,7 +2,7 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import { play } from './api/plinko';
 import { SoundEngine } from './audio/sound';
 import { PlinkoGame } from './core/game';
-import { loadSave, safeStorage, type Prefs } from './core/storage';
+import { isSkin, loadSave, safeStorage, type Prefs } from './core/storage';
 import { useI18n } from './i18n/context';
 import { detectLang } from './i18n/dictionaries';
 import { I18nProvider } from './i18n/i18n';
@@ -18,14 +18,19 @@ import { TopBar } from './ui/TopBar';
 
 // The multiplier editor is a separate chunk, downloaded only with ?dev=1 in the URL.
 const DevPanel = lazy(() => import('./dev/DevPanel'));
-const DEV_MODE = new URLSearchParams(window.location.search).get('dev') === '1';
+const params = new URLSearchParams(window.location.search);
+const DEV_MODE = params.get('dev') === '1';
+/** ?skin=guitar|amp opens a given board design (and remembers it). */
+const URL_SKIN = params.get('skin');
 
 export function App() {
   const [storage] = useState(safeStorage);
   const [boot] = useState(() => loadSave(storage));
   const [game] = useState(() => new PlinkoGame({ play }, boot.game));
   const [sound] = useState(() => new SoundEngine());
-  const [prefs, setPrefs] = useState<Prefs>(boot.prefs);
+  const [prefs, setPrefs] = useState<Prefs>(() =>
+    isSkin(URL_SKIN) ? { ...boot.prefs, skin: URL_SKIN } : boot.prefs,
+  );
   const [toast, setToast] = useState<{ key: number; text: string } | null>(null);
 
   const updatePrefs = useCallback(
