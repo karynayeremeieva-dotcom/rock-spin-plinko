@@ -218,7 +218,7 @@ export function binSprites(
 
     // Stage skin: a glowing gradient tile with a light neon rim and a glossy top, like the
     // chosen controls on the panel. Cold centre, hot edges; the hit tile glows much brighter.
-    ctx.shadowColor = rgb(color, lit ? 0.95 : 0.35);
+    ctx.shadowColor = rgb(color, lit ? 0.85 : 0.18);
     ctx.shadowBlur = pad * (lit ? 0.9 : 0.45);
     const body = ctx.createLinearGradient(x, y, x + width, y + height);
     body.addColorStop(0, rgb(shade(base, 0.06)));

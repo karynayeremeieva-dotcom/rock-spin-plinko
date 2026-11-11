@@ -2146,15 +2146,15 @@ button:disabled {
   --glass-hi: rgba(255, 255, 255, 0.16);
   --glass-ctl: rgba(255, 255, 255, 0.06);
   --glass-ctl-hover: rgba(255, 255, 255, 0.1);
-  --juice: linear-gradient(135deg, #ff6a1a 0%, #ffb43c 100%);
+  --juice: linear-gradient(135deg, #e8661f 0%, #eea24a 100%);
   --juice-ink: #1f0b02;
 }
 
 .topbar,
 .panel {
   background:
-    radial-gradient(120% 90% at 0% 100%, rgba(255, 106, 26, 0.24), transparent 60%),
-    radial-gradient(110% 90% at 100% 0%, rgba(47, 125, 255, 0.26), transparent 60%), var(--glass);
+    radial-gradient(120% 90% at 0% 100%, rgba(255, 106, 26, 0.12), transparent 60%),
+    radial-gradient(110% 90% at 100% 0%, rgba(47, 125, 255, 0.14), transparent 60%), var(--glass);
   border: 0;
   box-shadow:
     inset 0 0 0 1px var(--glass-ring),
@@ -2197,36 +2197,41 @@ button:disabled {
   background: var(--juice);
   color: var(--juice-ink);
   box-shadow:
-    inset 0 0 0 1px #ffd08a,
-    0 0 16px rgba(255, 140, 40, 0.55);
+    inset 0 0 0 1px rgba(255, 208, 138, 0.45),
+    0 0 10px rgba(255, 140, 40, 0.22);
 }
 
-.segmented__item[aria-checked='true'] {
+/* The hover tint above must not wash out the chosen risk: it keeps its fill. */
+.segmented__item[aria-checked='true'],
+.segmented__item[aria-checked='true']:hover:not(:disabled) {
   color: var(--juice-ink);
 }
 
-.segmented__item--low[aria-checked='true'] {
-  background: linear-gradient(135deg, #2f7dff, #5fb0ff);
+.segmented__item--low[aria-checked='true'],
+.segmented__item--low[aria-checked='true']:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4583e6, #62a4ea);
   color: #04122e;
   box-shadow:
-    inset 0 0 0 1px #9ccaff,
-    0 0 16px rgba(60, 140, 255, 0.55);
+    inset 0 0 0 1px rgba(156, 202, 255, 0.45),
+    0 0 10px rgba(60, 140, 255, 0.22);
 }
 
-.segmented__item--medium[aria-checked='true'] {
-  background: linear-gradient(135deg, #ffa23c, #ffd05a);
+.segmented__item--medium[aria-checked='true'],
+.segmented__item--medium[aria-checked='true']:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e99a3e, #efbf5c);
   color: #2e1402;
   box-shadow:
-    inset 0 0 0 1px #ffe2a0,
-    0 0 16px rgba(255, 180, 60, 0.5);
+    inset 0 0 0 1px rgba(255, 226, 160, 0.45),
+    0 0 10px rgba(255, 180, 60, 0.2);
 }
 
-.segmented__item--high[aria-checked='true'] {
-  background: linear-gradient(135deg, #ff3a1a, #ff7a2a);
+.segmented__item--high[aria-checked='true'],
+.segmented__item--high[aria-checked='true']:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e04a24, #ea7432);
   color: var(--juice-ink);
   box-shadow:
-    inset 0 0 0 1px #ffb08a,
-    0 0 16px rgba(255, 70, 30, 0.55);
+    inset 0 0 0 1px rgba(255, 176, 138, 0.45),
+    0 0 10px rgba(255, 70, 30, 0.22);
 }
 
 .balance__value {
@@ -2242,24 +2247,24 @@ button:disabled {
 
 .drop-btn {
   overflow: hidden;
-  background: linear-gradient(100deg, #ff5a12 0%, #ff7a1c 45%, #ffb43c 100%);
+  background: linear-gradient(100deg, #e8601c 0%, #ec7a2a 50%, #eea24a 100%);
   color: var(--juice-ink);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 220, 160, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    0 0 28px rgba(255, 110, 30, 0.55);
+    inset 0 0 0 1px rgba(255, 220, 160, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 18px rgba(255, 110, 30, 0.25);
 }
 
 .drop-btn:hover:not(:disabled) {
-  background: linear-gradient(100deg, #ff6a24 0%, #ff8a30 45%, #ffc050 100%);
+  background: linear-gradient(100deg, #f06a24 0%, #f48834 50%, #f4ae54 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(255, 230, 180, 0.7),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55),
-    0 0 36px rgba(255, 110, 30, 0.7);
+    inset 0 0 0 1px rgba(255, 230, 180, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 24px rgba(255, 110, 30, 0.38);
 }
 
 .drop-btn:active:not(:disabled) {
-  background: linear-gradient(100deg, #e84a0a 0%, #f06a14 45%, #f0a230 100%);
+  background: linear-gradient(100deg, #d4561a 0%, #dc6c24 50%, #e09440 100%);
 }
 
 /* A glint sweeps over the button now and then. */
@@ -2270,7 +2275,7 @@ button:disabled {
   background: linear-gradient(
     100deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.4) 50%,
+    rgba(255, 255, 255, 0.2) 50%,
     transparent 70%
   );
   transform: translateX(-100%);
