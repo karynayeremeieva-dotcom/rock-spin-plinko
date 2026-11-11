@@ -32,7 +32,7 @@ export function TopBar() {
       seen = true;
     }
     if (seen) return;
-    const timer = window.setTimeout(() => setOpen((o) => o ?? 'rules'), 0);
+    const timer = window.setTimeout(() => setOpen((o) => o ?? 'rules'), 600);
     return () => window.clearTimeout(timer);
   }, []);
 
