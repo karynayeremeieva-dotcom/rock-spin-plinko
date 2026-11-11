@@ -126,8 +126,9 @@ export function computeCabinetGeometry(
   layout: CabinetLayout,
 ): { geometry: BoardGeometry; cabinet: CabinetRect; field: CabinetField } {
   const { field, shelf, aspect } = layout;
-  const cabH = Math.min(height, (width * CABINET_MAX_OVERFLOW) / aspect);
-  const cabW = Math.min(width * CABINET_MAX_OVERFLOW, cabH * aspect * CABINET_MAX_STRETCH);
+  const overflow = layout.maxOverflow ?? CABINET_MAX_OVERFLOW;
+  const cabH = Math.min(height, (width * overflow) / aspect);
+  const cabW = Math.min(width * overflow, cabH * aspect * CABINET_MAX_STRETCH);
   const cab: CabinetRect = { x: (width - cabW) / 2, y: height - cabH, w: cabW, h: cabH };
   const py = (fy: number) => cab.y + fy * cab.h;
 

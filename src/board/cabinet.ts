@@ -1,7 +1,7 @@
 /**
- * The machine cabinet drawn around the board: art plus where its playfield and bin shelf
- * are, as fractions of the image. Measured on `art/cabinet.png` (1790×2400, drawn from a
- * 895×1200 layout).
+ * The cabinet drawn around the board, a V-shaped electric guitar body: art plus where its playfield
+ * and bin shelf are, as fractions of the image. Measured on `art/cabinet-guitar.png`
+ * (1016×1414, cropped to the guitar from `art/cabinet-guitar-source.webp`).
  */
 import cabinetUrl from '../assets/cabinet.webp';
 
@@ -27,25 +27,29 @@ export interface CabinetLayout {
   channels: { top: number; bottom: number };
   /** Recessed shelf where the bins sit. */
   shelf: { top: number; bottom: number; left: number; right: number };
+  /** How far past the canvas width the art may go (default 1.12: the frame may be cropped). */
+  maxOverflow?: number;
 }
 
 export const CABINET_LAYOUT: CabinetLayout = {
-  aspect: 895 / 1200,
+  aspect: 1016 / 1414,
   field: {
-    top: 0.1221,
-    bottom: 0.7808,
-    leftTop: 0.4374,
-    rightTop: 0.5621,
-    leftBottom: 0.1357,
-    rightBottom: 0.8651,
-    corner: 30 / 1200,
-    topCorner: 20 / 1200,
+    top: 0.176,
+    bottom: 0.8088,
+    leftTop: 0.4335,
+    rightTop: 0.5659,
+    leftBottom: 0.1034,
+    rightBottom: 0.9031,
+    corner: 4 / 1414,
+    topCorner: 30 / 1414,
   },
-  channels: { top: 0.79, bottom: 0.804 },
-  shelf: { top: 0.855, bottom: 0.94, left: 0.095, right: 0.905 },
+  channels: { top: 0.7925, bottom: 0.8088 },
+  shelf: { top: 0.8164, bottom: 0.8692, left: 0.114, right: 0.8966 },
+  // The wing tips are part of the silhouette: never crop them.
+  maxOverflow: 1,
 };
 
 export const CABINET_URL: string = cabinetUrl;
 
-/** The art already carries neon decorations outside the pyramid zone; code draws only the bin channels. */
+/** The art carries its own colour; code draws only the steel bin dividers. */
 export const CABINET_HAS_NEON = true;
