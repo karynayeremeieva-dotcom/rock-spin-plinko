@@ -156,6 +156,11 @@ function roundRect(
 }
 
 /** Largest font size at which every label (without "×") fits a bin of this size. */
+/** Text on a bin: the plain multiplier, never "×", so every bin reads the same. */
+export function binLabel(m: number): string {
+  return formatMultiplier(m, false);
+}
+
 export function binLabelSize(
   labels: readonly number[],
   width: number,
@@ -163,13 +168,12 @@ export function binLabelSize(
   fontFamily: string,
 ): number {
   const { ctx } = makeCanvas(4, 4);
-  let size = Math.min(height * 0.58, width * 0.6);
-  const fits = () =>
-    labels.every((m) => ctx.measureText(formatMultiplier(m, false)).width <= width * 0.84);
-  ctx.font = `600 ${size}px ${fontFamily}`;
+  let size = Math.min(height * 0.62, width * 0.7);
+  const fits = () => labels.every((m) => ctx.measureText(binLabel(m)).width <= width * 0.88);
+  ctx.font = `800 ${size}px ${fontFamily}`;
   while (!fits() && size > 4) {
     size -= 0.5;
-    ctx.font = `600 ${size}px ${fontFamily}`;
+    ctx.font = `800 ${size}px ${fontFamily}`;
   }
   return size;
 }
@@ -210,39 +214,33 @@ export function binSprites(
     const x = pad;
     const y = pad;
     const r = Math.min(width, height) * 0.18;
+    const base = lit ? shade(color, 0.3) : color;
 
+    // The whole tile carries the bin's colour (cold centre, hot edges), lit softly from above.
     if (lit) {
-      ctx.shadowColor = rgb(color, 0.8);
-      ctx.shadowBlur = pad * 0.7;
+      ctx.shadowColor = rgb(color, 0.9);
+      ctx.shadowBlur = pad * 0.8;
     }
-    ctx.fillStyle = lit ? rgb(shade(color, -0.7)) : '#202025';
+    const body = ctx.createLinearGradient(0, y, 0, y + height);
+    body.addColorStop(0, rgb(shade(base, 0.12)));
+    body.addColorStop(1, rgb(shade(base, -0.18)));
+    ctx.fillStyle = body;
     roundRect(ctx, x, y, width, height, r);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
     ctx.lineWidth = Math.max(1, height * 0.03);
     roundRect(ctx, x + 0.5, y + 0.5, width - 1, height - 1, r);
     ctx.stroke();
 
-    // Indicator bar.
-    ctx.save();
-    roundRect(ctx, x, y, width, height, r);
-    ctx.clip();
-    const bar = Math.max(2, height * 0.1);
-    ctx.fillStyle = lit ? rgb(shade(color, 0.25)) : rgb(color);
-    ctx.fillRect(x, y + height - bar, width, bar);
-    ctx.restore();
-
-    // Digits: regular-width face at medium weight, one size for the whole row.
-    const area = height - bar;
-    const size = fontSize ?? binLabelSize([label], width, area, fontFamily);
-    ctx.font = `600 ${size}px ${fontFamily}`;
-    let text = formatMultiplier(label, true);
-    if (ctx.measureText(text).width > width * 0.86) text = formatMultiplier(label, false);
+    // Dark digits in the tile's own hue: high contrast on every colour, one size per row.
+    const size = fontSize ?? binLabelSize([label], width, height, fontFamily);
+    ctx.font = `800 ${size}px ${fontFamily}`;
+    const text = binLabel(label); // never "×": every bin reads the same
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = lit ? '#ffffff' : '#ece8e1';
-    ctx.fillText(text, x + width / 2, y + area * 0.54);
+    ctx.fillStyle = rgb(shade(color, -0.82));
+    ctx.fillText(text, x + width / 2, y + height * 0.53);
     return canvas;
   };
   return { normal: draw(false), lit: draw(true), pad };

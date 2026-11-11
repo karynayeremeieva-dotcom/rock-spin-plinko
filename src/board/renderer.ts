@@ -63,6 +63,8 @@ const BIN_BOUNCE = 0.32;
 const BIN_FLASH = 0.45;
 const TRAIL = 0; // a trail smears the ball; the plucked strings already show motion
 const MAX_DPR = 2;
+/** Narrow face for bin labels when the bins are small (loaded by the app's CSS). */
+const CONDENSED_FONT = "'Oswald Variable', 'Arial Narrow', sans-serif";
 const SHOW_PEG_FLASH = false;
 /** String vibration: decay time constant (s) and visual frequency (Hz). */
 const STRING_DECAY = 0.32;
@@ -238,19 +240,21 @@ export class BoardRenderer {
     this.pegImg = pegSprite(g.pegRadius * d);
     this.pegGlowImg = glowSprite(g.pegRadius * 4 * d, BOARD_COLORS.pegGlow);
     this.ballImg = ballSprite(g.ballRadius * d);
-    const labelSize = binLabelSize(
-      this.table,
-      g.binWidth * d,
-      g.binHeight * d * 0.9,
-      this.fontFamily,
-    );
+    // Narrow bins (phones, many rows) switch to a condensed face, so full labels like 0.2 and
+    // 1000 keep digits big enough to read.
+    let binFont = this.fontFamily;
+    let labelSize = binLabelSize(this.table, g.binWidth * d, g.binHeight * d, binFont);
+    if (labelSize < 12 * d) {
+      binFont = CONDENSED_FONT;
+      labelSize = binLabelSize(this.table, g.binWidth * d, g.binHeight * d, binFont);
+    }
     this.bins = this.table.map((m, k) =>
       binSprites(
         g.binWidth * d,
         g.binHeight * d,
         binColor(Math.abs(k - g.rows / 2) / (g.rows / 2)),
         m,
-        this.fontFamily,
+        binFont,
         labelSize,
       ),
     );
