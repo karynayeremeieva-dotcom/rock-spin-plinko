@@ -14,7 +14,7 @@ export function ResultsFeed() {
     <ol className="feed" aria-label={t.recent}>
       {recent.length === 0 && <li className="feed__empty">{t.noResults}</li>}
       {recent.map((entry) => (
-        <li key={entry.id} className="feed__chip" style={{ background: binTint(entry) }}>
+        <li key={entry.id} className="feed__chip" style={{ ['--tint' as string]: binTint(entry) }}>
           {formatMultiplier(entry.multiplier, true)}
         </li>
       ))}

@@ -23,7 +23,7 @@ export function TopBar() {
   return (
     <header className="topbar">
       <div className="brand">
-        <img className="brand__emblem" src={emblemUrl} alt="" width={36} height={36} />
+        <img className="brand__emblem" src={emblemUrl} alt="" width={44} height={44} />
         <span className="brand__name">Rock Spin</span>
       </div>
       <Balance />

@@ -90,14 +90,14 @@ button:disabled {
   }
 }
 
-/* Darken the middle so the board stays readable over the smoke. */
+/* The board has its own dark cabinet now: only a soft edge vignette and a floor shadow. */
 .stage::after {
   content: '';
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(70% 45% at 50% 48%, rgba(6, 6, 8, 0.72), rgba(6, 6, 8, 0.25) 75%, transparent),
-    linear-gradient(to bottom, transparent 62%, rgba(6, 6, 8, 0.9));
+    radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(6, 6, 8, 0.55)),
+    linear-gradient(to bottom, transparent 70%, rgba(6, 6, 8, 0.8));
 }
 
 /* ---------- layout: phone first ---------- */
@@ -111,8 +111,12 @@ button:disabled {
   height: var(--tg-viewport-stable-height, 100dvh);
   max-width: 480px;
   margin: 0 auto;
-  padding: calc(var(--safe-top) + 8px) 10px calc(var(--safe-bottom) + 8px);
+  padding: calc(var(--safe-top) + 8px) max(10px, env(safe-area-inset-right))
+    calc(var(--safe-bottom) + 8px) max(10px, env(safe-area-inset-left));
   gap: var(--gap);
+  /* Size container: the panel adapts to the height that is really left after the notch,
+     the home indicator and Telegram's own buttons (see the container queries below). */
+  container: app / size;
 }
 
 .play {
@@ -141,8 +145,8 @@ button:disabled {
 }
 
 .brand__emblem {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   filter: drop-shadow(0 0 8px rgba(255, 106, 26, 0.45));
 }
 
@@ -200,23 +204,33 @@ button:disabled {
   pointer-events: none;
   animation: flash-up 1.4s ease-out forwards;
   z-index: 5;
+  /* lift it off the cabinet grille behind it */
+  border: 1px solid rgba(0, 0, 0, 0.55);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
 }
 
 .balance__flash--loss {
-  background: rgba(60, 58, 64, 0.95);
+  background: #1d1c21;
   color: #cfc8bf;
 }
 
 .balance__flash--win {
   background: var(--win);
   color: #1a1004;
-  box-shadow: 0 0 14px rgba(255, 194, 74, 0.55);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.7),
+    0 0 14px rgba(255, 194, 74, 0.55);
 }
 
 .balance__flash--big {
   background: linear-gradient(90deg, var(--hot), var(--hot-2));
   color: #1a0b02;
-  box-shadow: 0 0 22px rgba(255, 106, 26, 0.8);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.7),
+    0 0 22px rgba(255, 106, 26, 0.8);
 }
 
 @keyframes flash-up {
@@ -977,14 +991,205 @@ button:disabled {
   text-align: center;
 }
 
-.rules {
-  margin: 0;
-  padding-left: 20px;
-  line-height: 1.5;
+/* ---------- how to play: animated tour ---------- */
+
+.howto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  touch-action: pan-y;
 }
 
-.rules li + li {
-  margin-top: 8px;
+.howto__slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  animation: howto-in 0.35s ease-out;
+}
+
+@keyframes howto-in {
+  from {
+    opacity: 0;
+    transform: translateX(18px);
+  }
+}
+
+.howto__scene {
+  width: 100%;
+  max-width: 320px;
+  aspect-ratio: 240 / 140;
+  border-radius: 14px;
+  background: radial-gradient(120% 90% at 50% 30%, #1c1a20, #0b0b0d);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.howto__scene svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.howto__step {
+  margin: 14px 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.howto__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hot-2);
+  text-shadow: 0 0 14px rgba(255, 140, 40, 0.45);
+}
+
+.howto__text {
+  max-width: 320px;
+  margin: 6px auto 0;
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 4.5em;
+}
+
+.howto__dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+
+.howto__dot {
+  width: 8px;
+  height: 8px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  transition:
+    width 0.2s,
+    background 0.2s;
+}
+
+.howto__dot--on {
+  width: 24px;
+  background: var(--hot-2);
+}
+
+.howto__nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.howto__back {
+  flex: 0 0 auto;
+  min-width: 96px;
+}
+
+.howto__next {
+  flex: 1 1 auto;
+  height: var(--control-h);
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffb43c 0%, #ff6a1a 55%, #e1400c 100%);
+  color: #1a0b02;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition:
+    transform 0.08s,
+    filter 0.15s;
+}
+
+.howto__next:hover {
+  filter: brightness(1.08);
+}
+
+.howto__next:active {
+  transform: scale(0.97);
+}
+
+/* SVG scene text */
+.howto__svg-num {
+  font: 800 17px var(--font-ui);
+  fill: var(--fg);
+}
+
+.howto__svg-unit {
+  font: 700 11px var(--font-ui);
+  fill: var(--muted);
+}
+
+.howto__svg-label {
+  font: 700 11px var(--font-ui);
+  fill: #e8e4dc;
+}
+
+.howto__svg-bin {
+  font: 800 9px var(--font-ui);
+  fill: #140d08;
+}
+
+.howto__svg-win {
+  font: 800 16px var(--font-ui);
+  fill: var(--win);
+}
+
+.howto__svg-edge {
+  font: 800 13px var(--font-ui);
+}
+
+.howto__svg-bits {
+  font:
+    700 12px ui-monospace,
+    monospace;
+  letter-spacing: 0.08em;
+  fill: #5ee08a;
+}
+
+.howto__svg-badge {
+  font: 800 11px var(--font-ui);
+}
+
+.howto__bar {
+  transform-box: fill-box;
+  transform-origin: bottom;
+  animation: howto-bar 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+}
+
+@keyframes howto-bar {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+.howto__shield {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: howto-shield 2.4s ease-in-out infinite;
+}
+
+@keyframes howto-shield {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
 }
 
 .menu {
@@ -1405,9 +1610,10 @@ button:disabled {
   text-align: right;
 }
 
-/* ---------- short phones (360×640 and similar) ---------- */
+/* ---------- short phones (360×640 up to 360×780) ---------- */
+/* Up to 780 px the regular panel would push the board below 55 % of the screen. */
 
-@media (max-height: 700px) {
+@media (max-height: 780px) {
   :root {
     --gap: 6px;
     --control-h: 36px;
@@ -1423,8 +1629,8 @@ button:disabled {
   }
 
   .brand__emblem {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
   }
 
   .brand__name {
@@ -1457,6 +1663,106 @@ button:disabled {
 
   .drop-btn__label {
     font-size: 19px;
+  }
+}
+
+/* Same compact panel when the screen is tall but the notch, the home indicator or Telegram's
+   buttons leave little usable height (e.g. iPhone 14 in Telegram fullscreen). */
+@container app (max-height: 764px) {
+  .topbar,
+  .panel {
+    --gap: 6px;
+    --control-h: 36px;
+  }
+
+  .topbar {
+    min-height: 38px;
+  }
+
+  .brand__emblem {
+    width: 36px;
+    height: 36px;
+  }
+
+  .balance {
+    padding: 2px 10px;
+  }
+
+  .balance__label {
+    display: none;
+  }
+
+  .panel {
+    padding: 8px;
+  }
+
+  .panel .field__label {
+    display: none;
+  }
+
+  .chip--small {
+    height: 26px;
+  }
+
+  .drop-btn {
+    height: 46px;
+  }
+
+  .drop-btn__label {
+    font-size: 19px;
+  }
+}
+
+/* ---------- tall phones (850 px and up): bigger, easier controls ---------- */
+/* Costs about +30 px; with less usable height that would push the board under 55 %.
+   Measured on the app's content box, i.e. without safe areas. */
+
+@container app (min-height: 834px) and (max-width: 700px) {
+  .topbar,
+  .panel {
+    --control-h: 48px;
+  }
+
+  .panel {
+    padding: 12px;
+  }
+
+  .field__label {
+    font-size: 12px;
+  }
+
+  .input input {
+    font-size: 20px;
+  }
+
+  .chip {
+    font-size: 16px;
+  }
+
+  .chip--small {
+    height: 32px;
+    font-size: 15px;
+  }
+
+  .stepper__value {
+    font-size: 20px;
+  }
+
+  .segmented__item {
+    font-size: 15px;
+  }
+
+  .drop-btn {
+    height: 58px;
+  }
+
+  .drop-btn__label {
+    font-size: 26px;
+  }
+
+  .auto-btn {
+    width: 72px;
+    font-size: 12px;
   }
 }
 
@@ -1505,6 +1811,29 @@ button:disabled {
   }
 }
 
+/* ---------- wide desktop: board centred on the stage, like the machine in the art ---------- */
+/* The stage art has its empty centre exactly in the middle, so the cabinet goes there,
+   the panel sits to its left over the drums and the crowd stays visible on the right. */
+
+@media (min-width: 1280px) {
+  .app {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, min(56vw, calc((100dvh - 170px) * 0.92)))
+      minmax(0, 1fr);
+    grid-template-areas:
+      'top top top'
+      'panel play .';
+    max-width: 1680px;
+  }
+
+  .panel {
+    justify-self: end;
+    width: 100%;
+    max-width: 360px;
+  }
+}
+
 /* ---------- reduced motion ---------- */
 
 @media (prefers-reduced-motion: reduce) {
@@ -1531,4 +1860,192 @@ button:disabled {
   .stage--hit {
     opacity: 1;
   }
+}
+
+/* ======================================================================
+   Skin: studio console. Flat matte black, hairline dividers, no bevels or glow.
+   Colour only where it means something: bin indicators, the chosen quick bet, Drop.
+   Only materials live here — sizes and layout stay above.
+   ====================================================================== */
+
+:root {
+  --console: #0c0c0e;
+  --console-2: #151518;
+  --console-3: #1e1e22;
+  --hairline: #1f1f23;
+  --ink-muted: #6f6a64;
+}
+
+.topbar {
+  padding: 0 6px;
+  background: rgba(12, 12, 14, 0.94);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+.balance {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.balance__label {
+  color: #a39e96;
+  letter-spacing: 0.14em;
+}
+
+.panel {
+  background: var(--console);
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  border-radius: 18px;
+  box-shadow: none;
+}
+
+.field__label {
+  color: #a39e96;
+  letter-spacing: 0.14em;
+  text-shadow: none;
+}
+
+.input,
+.stepper,
+.segmented {
+  background: var(--console-2);
+  border: 0;
+  box-shadow: none;
+}
+
+.input:hover,
+.input:focus-within {
+  box-shadow: inset 0 0 0 1px #34343a;
+}
+
+.input--error,
+.input--error:hover,
+.input--error:focus-within {
+  box-shadow: inset 0 0 0 1px var(--danger);
+}
+
+.chip,
+.icon-btn,
+.auto-btn {
+  background: var(--console-2);
+  border: 0;
+  box-shadow: none;
+  color: #d8d3cb;
+}
+
+.icon-btn {
+  box-shadow: inset 0 0 0 1px #2c2c32;
+  background: var(--console-2);
+  color: #e6e1d9;
+}
+
+.chip:hover:not(:disabled),
+.icon-btn:hover,
+.auto-btn:hover {
+  background: var(--console-3);
+  border-color: transparent;
+}
+
+.chip:active:not(:disabled),
+.icon-btn:active,
+.auto-btn:active {
+  background: #26262b;
+  box-shadow: none;
+}
+
+.chip--active {
+  color: var(--hot-2);
+  box-shadow: inset 0 0 0 1px var(--hot-2);
+  text-shadow: none;
+}
+
+.segmented__item[aria-checked='true'],
+.segmented__item--low[aria-checked='true'],
+.segmented__item--medium[aria-checked='true'],
+.segmented__item--high[aria-checked='true'] {
+  background: #26262b;
+  color: #ffffff;
+  border: 0;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+.drop-btn {
+  background: var(--hot);
+  border: 0;
+  color: #160a02;
+  box-shadow: none;
+}
+
+.drop-btn__label {
+  text-shadow: none;
+}
+
+.drop-btn:hover:not(:disabled) {
+  background: #ff7d33;
+  filter: none;
+  box-shadow: none;
+}
+
+.drop-btn:active:not(:disabled) {
+  background: #e85d12;
+}
+
+.drop-btn:disabled {
+  background: var(--console-3);
+  color: #5d5952;
+  box-shadow: none;
+}
+
+.drop-btn__count {
+  background: rgba(22, 10, 2, 0.85);
+}
+
+/* Results feed: plain text with a coloured dot on a dark strip, newest one brighter */
+.feed {
+  gap: 10px;
+  align-self: center;
+  max-width: 100%;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(12, 12, 14, 0.9);
+}
+
+.feed__chip {
+  min-width: 0;
+  height: 20px;
+  line-height: 20px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  background: transparent !important;
+  color: #c9c4bc;
+  border: 0;
+  box-shadow: none !important;
+  text-shadow: none;
+  opacity: 1;
+}
+
+.feed__chip::before {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--tint, #ffb43c);
+  vertical-align: 1px;
+}
+
+.feed__chip:first-child {
+  color: #f4efe8;
+}
+
+/* The Space shortcut keeps working and is explained in "How to play"; no keycap on the button. */
+.drop-btn__hint {
+  display: none !important;
 }
