@@ -2322,3 +2322,20 @@ button:disabled {
     display: none;
   }
 }
+
+/* The icon buttons sat flush against the bar's top, bottom and right edge: give them the
+   same 4px inset as the gap between them, and let them be as tall as the bar's content
+   (the emblem sets it), so the inset is 4px on every side on phones too. */
+.topbar {
+  padding: 4px 4px 4px 6px;
+}
+
+.topbar__actions {
+  align-self: stretch;
+}
+
+.topbar__actions .icon-btn {
+  width: auto;
+  height: 100%;
+  aspect-ratio: 1;
+}
