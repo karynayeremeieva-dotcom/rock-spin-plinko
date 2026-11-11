@@ -2049,3 +2049,13 @@ button:disabled {
 .drop-btn__hint {
   display: none !important;
 }
+
+/* Only whole results: chips that don't fit wrap onto a hidden second line instead of being
+   cut in half at the edges (the centred row overflowed and showed a sliver on the left). */
+.feed {
+  flex-wrap: wrap;
+  row-gap: 0;
+  overflow: hidden;
+  mask-image: none;
+  -webkit-mask-image: none;
+}
