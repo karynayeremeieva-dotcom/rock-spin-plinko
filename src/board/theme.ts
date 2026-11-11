@@ -216,21 +216,32 @@ export function binSprites(
     const r = Math.min(width, height) * 0.18;
     const base = lit ? shade(color, 0.3) : color;
 
-    // The whole tile carries the bin's colour (cold centre, hot edges), lit softly from above.
-    if (lit) {
-      ctx.shadowColor = rgb(color, 0.9);
-      ctx.shadowBlur = pad * 0.8;
-    }
-    const body = ctx.createLinearGradient(0, y, 0, y + height);
-    body.addColorStop(0, rgb(shade(base, 0.12)));
-    body.addColorStop(1, rgb(shade(base, -0.18)));
+    // Stage skin: a glowing gradient tile with a light neon rim and a glossy top, like the
+    // chosen controls on the panel. Cold centre, hot edges; the hit tile glows much brighter.
+    ctx.shadowColor = rgb(color, lit ? 0.95 : 0.35);
+    ctx.shadowBlur = pad * (lit ? 0.9 : 0.45);
+    const body = ctx.createLinearGradient(x, y, x + width, y + height);
+    body.addColorStop(0, rgb(shade(base, 0.06)));
+    body.addColorStop(1, rgb(shade(base, -0.16)));
     ctx.fillStyle = body;
     roundRect(ctx, x, y, width, height, r);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
-    ctx.lineWidth = Math.max(1, height * 0.03);
-    roundRect(ctx, x + 0.5, y + 0.5, width - 1, height - 1, r);
+
+    ctx.save();
+    roundRect(ctx, x, y, width, height, r);
+    ctx.clip();
+    const gloss = ctx.createLinearGradient(0, y, 0, y + height * 0.5);
+    gloss.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
+    gloss.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = gloss;
+    ctx.fillRect(x, y, width, height * 0.5);
+    ctx.restore();
+
+    const rim = Math.max(1, height * 0.035);
+    ctx.strokeStyle = rgb(shade(color, 0.5), lit ? 1 : 0.75);
+    ctx.lineWidth = rim;
+    roundRect(ctx, x + rim / 2, y + rim / 2, width - rim, height - rim, Math.max(0, r - rim / 2));
     ctx.stroke();
 
     // Dark digits in the tile's own hue: high contrast on every colour, one size per row.

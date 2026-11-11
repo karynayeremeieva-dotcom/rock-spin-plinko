@@ -2134,3 +2134,186 @@ button:disabled {
     transition: none;
   }
 }
+
+/* ======================================================================
+   Skin: stage. Frosted glass lit by the cabinet's orange and blue neon, glowing gradients
+   on what is chosen, and a glint running over Drop. Materials only — sizes and layout stay above.
+   ====================================================================== */
+
+:root {
+  --glass: rgba(20, 17, 26, 0.72);
+  --glass-ring: rgba(255, 255, 255, 0.1);
+  --glass-hi: rgba(255, 255, 255, 0.16);
+  --glass-ctl: rgba(255, 255, 255, 0.06);
+  --glass-ctl-hover: rgba(255, 255, 255, 0.1);
+  --juice: linear-gradient(135deg, #ff6a1a 0%, #ffb43c 100%);
+  --juice-ink: #1f0b02;
+}
+
+.topbar,
+.panel {
+  background:
+    radial-gradient(120% 90% at 0% 100%, rgba(255, 106, 26, 0.24), transparent 60%),
+    radial-gradient(110% 90% at 100% 0%, rgba(47, 125, 255, 0.26), transparent 60%), var(--glass);
+  border: 0;
+  box-shadow:
+    inset 0 0 0 1px var(--glass-ring),
+    inset 0 1px 0 var(--glass-hi),
+    0 12px 40px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+}
+
+.input,
+.stepper,
+.segmented,
+.chip,
+.icon-btn,
+.auto-btn {
+  background: var(--glass-ctl);
+  border: 0;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.chip:hover:not(:disabled),
+.icon-btn:hover,
+.auto-btn:hover:not(:disabled) {
+  background: var(--glass-ctl-hover);
+}
+
+.chip:active:not(:disabled),
+.icon-btn:active,
+.auto-btn:active:not(:disabled) {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.input:hover,
+.input:focus-within {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+}
+
+.chip--active,
+.chip--active:hover:not(:disabled) {
+  background: var(--juice);
+  color: var(--juice-ink);
+  box-shadow:
+    inset 0 0 0 1px #ffd08a,
+    0 0 16px rgba(255, 140, 40, 0.55);
+}
+
+.segmented__item[aria-checked='true'] {
+  color: var(--juice-ink);
+}
+
+.segmented__item--low[aria-checked='true'] {
+  background: linear-gradient(135deg, #2f7dff, #5fb0ff);
+  color: #04122e;
+  box-shadow:
+    inset 0 0 0 1px #9ccaff,
+    0 0 16px rgba(60, 140, 255, 0.55);
+}
+
+.segmented__item--medium[aria-checked='true'] {
+  background: linear-gradient(135deg, #ffa23c, #ffd05a);
+  color: #2e1402;
+  box-shadow:
+    inset 0 0 0 1px #ffe2a0,
+    0 0 16px rgba(255, 180, 60, 0.5);
+}
+
+.segmented__item--high[aria-checked='true'] {
+  background: linear-gradient(135deg, #ff3a1a, #ff7a2a);
+  color: var(--juice-ink);
+  box-shadow:
+    inset 0 0 0 1px #ffb08a,
+    0 0 16px rgba(255, 70, 30, 0.55);
+}
+
+.balance__value {
+  background: linear-gradient(90deg, #ffffff 30%, #ffc27a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.balance__unit {
+  -webkit-text-fill-color: #9a948c;
+}
+
+.drop-btn {
+  overflow: hidden;
+  background: linear-gradient(100deg, #ff5a12 0%, #ff7a1c 45%, #ffb43c 100%);
+  color: var(--juice-ink);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 220, 160, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5),
+    0 0 28px rgba(255, 110, 30, 0.55);
+}
+
+.drop-btn:hover:not(:disabled) {
+  background: linear-gradient(100deg, #ff6a24 0%, #ff8a30 45%, #ffc050 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 230, 180, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55),
+    0 0 36px rgba(255, 110, 30, 0.7);
+}
+
+.drop-btn:active:not(:disabled) {
+  background: linear-gradient(100deg, #e84a0a 0%, #f06a14 45%, #f0a230 100%);
+}
+
+/* A glint sweeps over the button now and then. */
+.drop-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%);
+  animation: drop-glint 3.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.drop-btn:disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: #6d6862;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.drop-btn:disabled::after {
+  display: none;
+}
+
+.drop-btn.drop-btn--stop {
+  background: linear-gradient(180deg, #ff5a4a 0%, #d8261c 100%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 10px 30px rgba(220, 40, 30, 0.45);
+}
+
+.drop-btn--stop::after {
+  display: none;
+}
+
+.drop-btn__count {
+  background: var(--juice-ink);
+  color: #ffb43c;
+}
+
+@keyframes drop-glint {
+  60%,
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .drop-btn::after {
+    display: none;
+  }
+}
