@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createFakeServer, type PlayFn, type PlayResult } from '../api/plinko';
 import type { AutoConfig } from './auto';
 import { calcPayout } from './money';
-import { INITIAL_BALANCE, MAX_BALLS, PlinkoGame, type GameState } from './game';
+import { DEFAULT_ROWS, INITIAL_BALANCE, MAX_BALLS, PlinkoGame, type GameState } from './game';
 
 /** Server stub that answers instantly with the given multipliers, in order, then 1×. */
 function scriptedPlay(multipliers: number[] = []): PlayFn {
@@ -291,7 +291,7 @@ describe('persistence', () => {
     expect(game.getState()).toMatchObject({
       balance: INITIAL_BALANCE,
       bet: 100,
-      rows: 16,
+      rows: DEFAULT_ROWS,
       risk: 'medium',
       history: [],
     });

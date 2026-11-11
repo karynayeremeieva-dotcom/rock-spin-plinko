@@ -52,7 +52,11 @@ export function defaultBounceTime(rows: number): number {
 export function buildTrajectory(
   g: BoardGeometry,
   path: readonly Direction[],
-  { bounceTime = defaultBounceTime(g.rows), random = Math.random }: TrajectoryOptions = {},
+  {
+    // Taller (stretched) rows take longer to fall through, like real gravity: t ∝ √height.
+    bounceTime = defaultBounceTime(g.rows) * Math.sqrt(g.rowGap / (g.spacing * 0.92)),
+    random = Math.random,
+  }: TrajectoryOptions = {},
 ): Trajectory {
   if (path.length !== g.rows) {
     throw new Error(`Path has ${path.length} steps, board has ${g.rows} rows`);
@@ -106,7 +110,9 @@ export function buildTrajectory(
     const from = contacts[row] ?? landing;
     const to = row + 1 < g.rows ? (contacts[row + 1] ?? landing) : landing;
     const isLast = row + 1 === g.rows;
-    const duration = bounceTime * (isLast ? 1.25 : 1) * (0.94 + random() * 0.12);
+    // The last fall can be long (neon channels into the bins): t ∝ √distance, like gravity.
+    const fall = isLast ? 1.25 * Math.sqrt(Math.max(1, (to.y - from.y) / g.rowGap)) : 1;
+    const duration = bounceTime * fall * (0.94 + random() * 0.12);
     const apex = g.rowGap * (0.16 + random() * 0.14);
     segments.push(arc(t, duration, from, to, apex));
     t += duration;

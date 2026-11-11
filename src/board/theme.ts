@@ -3,6 +3,16 @@
 export const BOARD_COLORS = {
   peg: { rim: '#2a2c31', base: '#8a9099', light: '#f3f5f8' },
   pegGlow: 'rgba(255, 140, 40, 1)',
+  /** Guitar strings: chrome when idle, molten orange while vibrating. */
+  string: '#f4f6f9',
+  stringBody: '#7d838c',
+  /** Dark plate behind the pyramid. */
+  backplate: 'rgba(5, 5, 7, 0.82)',
+  /** Neon tubes inside the cabinet playfield. */
+  neonLeft: '#ff8a2a',
+  neonRight: '#3d8bff',
+  stringHot: 'rgba(255, 150, 50, 1)',
+  stringAnchor: '#6b7079',
   ball: ['#fffbea', '#ffe7a3', '#ffb43c', 'rgba(255, 106, 24, 0.55)', 'rgba(255, 60, 0, 0)'],
   binText: '#140d08',
 } as const;
@@ -94,21 +104,37 @@ export function glowSprite(radius: number, color: string): HTMLCanvasElement {
 }
 
 /** Glowing hot ball. The solid core is ~40 % of the sprite radius. */
-export const BALL_SPRITE_SCALE = 2.5;
+export const BALL_SPRITE_SCALE = 1.45;
 
+/**
+ * Glowing hot ball: a crisp lit sphere (hard edge, specular highlight) inside a narrow halo.
+ * The hard edge keeps balls sharp even with many of them on the board.
+ */
 export function ballSprite(ballRadius: number): HTMLCanvasElement {
-  const r = ballRadius * BALL_SPRITE_SCALE;
-  const { canvas, ctx } = makeCanvas(r * 2, r * 2);
-  const g = ctx.createRadialGradient(r, r, 0, r, r, r);
-  const [c0, c1, c2, c3, c4] = BOARD_COLORS.ball;
-  const core = 1 / BALL_SPRITE_SCALE;
-  g.addColorStop(0, c0);
-  g.addColorStop(core * 0.45, c1);
-  g.addColorStop(core * 0.9, c2);
-  g.addColorStop(core * 1.15, c3);
-  g.addColorStop(1, c4);
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, r * 2, r * 2);
+  const R = ballRadius * BALL_SPRITE_SCALE;
+  const r = ballRadius;
+  const { canvas, ctx } = makeCanvas(R * 2, R * 2);
+  // narrow halo
+  const halo = ctx.createRadialGradient(R, R, r * 0.8, R, R, R);
+  halo.addColorStop(0, 'rgba(255, 150, 50, 0.4)');
+  halo.addColorStop(0.5, 'rgba(255, 110, 20, 0.1)');
+  halo.addColorStop(1, 'rgba(255, 90, 10, 0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, R * 2, R * 2);
+  // sphere with light from the top-left
+  const body = ctx.createRadialGradient(R - r * 0.35, R - r * 0.4, r * 0.05, R, R, r);
+  body.addColorStop(0, '#fffdf2');
+  body.addColorStop(0.35, '#ffe39a');
+  body.addColorStop(0.75, '#ffa22e');
+  body.addColorStop(1, '#e8560f');
+  ctx.fillStyle = body;
+  ctx.beginPath();
+  ctx.arc(R, R, r, 0, Math.PI * 2);
+  ctx.fill();
+  // thin darker rim for a clean silhouette
+  ctx.strokeStyle = 'rgba(150, 40, 0, 0.6)';
+  ctx.lineWidth = Math.max(1, r * 0.08);
+  ctx.stroke();
   return canvas;
 }
 
@@ -129,6 +155,25 @@ function roundRect(
   ctx.closePath();
 }
 
+/** Largest font size at which every label (without "×") fits a bin of this size. */
+export function binLabelSize(
+  labels: readonly number[],
+  width: number,
+  height: number,
+  fontFamily: string,
+): number {
+  const { ctx } = makeCanvas(4, 4);
+  let size = Math.min(height * 0.58, width * 0.6);
+  const fits = () =>
+    labels.every((m) => ctx.measureText(formatMultiplier(m, false)).width <= width * 0.84);
+  ctx.font = `600 ${size}px ${fontFamily}`;
+  while (!fits() && size > 4) {
+    size -= 0.5;
+    ctx.font = `600 ${size}px ${fontFamily}`;
+  }
+  return size;
+}
+
 export function formatMultiplier(m: number, withSign: boolean): string {
   const text = m >= 100 ? String(Math.round(m)) : String(m);
   return withSign ? `${text}×` : text;
@@ -145,64 +190,59 @@ export interface BinSpriteSet {
  * Guitar-amp grille bin: coloured cabinet, woven grille dots, multiplier label.
  * Sizes in device pixels.
  */
+/**
+ * Bin as a studio-console tile: flat dark body, white digits and a coloured indicator bar
+ * along the bottom. The lit version tints the tile and lights the bar up.
+ * Sizes in device pixels.
+ */
 export function binSprites(
   width: number,
   height: number,
   color: Rgb,
   label: number,
   fontFamily: string,
+  /** One font size for the whole row, so the digits line up (see binLabelSize). */
+  fontSize?: number,
 ): BinSpriteSet {
   const pad = Math.ceil(height * 0.5);
   const draw = (lit: boolean) => {
     const { canvas, ctx } = makeCanvas(width + pad * 2, height + pad * 2);
     const x = pad;
     const y = pad;
-    const r = Math.min(width, height) * 0.2;
-    const base = lit ? shade(color, 0.35) : color;
+    const r = Math.min(width, height) * 0.18;
 
     if (lit) {
-      ctx.shadowColor = rgb(color, 0.95);
-      ctx.shadowBlur = pad * 0.9;
+      ctx.shadowColor = rgb(color, 0.8);
+      ctx.shadowBlur = pad * 0.7;
     }
-    const fill = ctx.createLinearGradient(0, y, 0, y + height);
-    fill.addColorStop(0, rgb(shade(base, 0.25)));
-    fill.addColorStop(0.55, rgb(base));
-    fill.addColorStop(1, rgb(shade(base, -0.35)));
-    ctx.fillStyle = fill;
+    ctx.fillStyle = lit ? rgb(shade(color, -0.7)) : '#202025';
     roundRect(ctx, x, y, width, height, r);
     ctx.fill();
     ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.lineWidth = Math.max(1, height * 0.03);
+    roundRect(ctx, x + 0.5, y + 0.5, width - 1, height - 1, r);
+    ctx.stroke();
 
-    // Grille cloth: a dot weave clipped to the cabinet.
+    // Indicator bar.
     ctx.save();
     roundRect(ctx, x, y, width, height, r);
     ctx.clip();
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
-    const step = Math.max(2, Math.round(height / 11));
-    for (let gy = y + step / 2; gy < y + height; gy += step) {
-      const offset = Math.round((gy - y) / step) % 2 === 0 ? 0 : step / 2;
-      for (let gx = x + offset; gx < x + width; gx += step) {
-        ctx.fillRect(gx, gy, step * 0.45, step * 0.45);
-      }
-    }
-    // Top bevel.
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-    ctx.fillRect(x, y, width, Math.max(1, height * 0.06));
+    const bar = Math.max(2, height * 0.1);
+    ctx.fillStyle = lit ? rgb(shade(color, 0.25)) : rgb(color);
+    ctx.fillRect(x, y + height - bar, width, bar);
     ctx.restore();
 
-    // Label: with "×" if it fits, without otherwise.
-    let size = Math.min(height * 0.42, width * 0.42);
-    ctx.font = `800 ${size}px ${fontFamily}`;
+    // Digits: regular-width face at medium weight, one size for the whole row.
+    const area = height - bar;
+    const size = fontSize ?? binLabelSize([label], width, area, fontFamily);
+    ctx.font = `600 ${size}px ${fontFamily}`;
     let text = formatMultiplier(label, true);
     if (ctx.measureText(text).width > width * 0.86) text = formatMultiplier(label, false);
-    while (ctx.measureText(text).width > width * 0.9 && size > 4) {
-      size -= 0.5;
-      ctx.font = `800 ${size}px ${fontFamily}`;
-    }
-    ctx.fillStyle = BOARD_COLORS.binText;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(text, x + width / 2, y + height * 0.54);
+    ctx.fillStyle = lit ? '#ffffff' : '#ece8e1';
+    ctx.fillText(text, x + width / 2, y + area * 0.54);
     return canvas;
   };
   return { normal: draw(false), lit: draw(true), pad };

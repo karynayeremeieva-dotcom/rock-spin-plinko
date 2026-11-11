@@ -20,6 +20,8 @@ import { isRisk, isRows, type Risk } from './multipliers';
 export const INITIAL_BALANCE: Cents = 100_000; // 1 000.00 RC
 export const MAX_BALLS = 50;
 export const HISTORY_LIMIT = 50;
+/** First-visit row count: a balanced board; players can go 8–16. */
+export const DEFAULT_ROWS = 12;
 
 export interface Ball {
   id: string;
@@ -111,7 +113,7 @@ export class PlinkoGame {
     this.state = {
       balance,
       bet: isNonNegativeInt(saved?.bet) && saved.bet >= MIN_BET ? saved.bet : 100,
-      rows: isRows(saved?.rows) ? saved.rows : 16,
+      rows: isRows(saved?.rows) ? saved.rows : DEFAULT_ROWS,
       risk: isRisk(saved?.risk) ? saved.risk : 'medium',
       pending: 0,
       balls: 0,

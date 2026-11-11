@@ -2,7 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { createFakeServer } from '../api/plinko';
 import { ROW_OPTIONS } from '../core/multipliers';
 import type { Direction } from '../core/rng';
-import { binAt, binCenterX, computeGeometry, pegCount, pegX, pegY } from './geometry';
+import { CABINET_LAYOUT } from './cabinet';
+import {
+  binAt,
+  binCenterX,
+  computeCabinetGeometry,
+  computeGeometry,
+  pegCount,
+  pegX,
+  pegY,
+} from './geometry';
 import { buildTrajectory } from './trajectory';
 
 const sizes = [
@@ -23,6 +32,15 @@ describe('geometry', () => {
       // Ball must fit between two neighbouring pegs.
       expect(g.ballRadius * 2).toBeLessThan(g.spacing - 2 * g.pegRadius);
     }
+  });
+
+  it('uses spare height on a tall, narrow board without breaking the pyramid', () => {
+    const g = computeGeometry(370, 500, 16);
+    expect(g.binHeight).toBeGreaterThan(g.spacing * 0.95);
+    expect(g.rowGap).toBeLessThanOrEqual(g.spacing * 1.0 + 1e-9);
+    expect(g.binTop + g.binHeight).toBeLessThanOrEqual(500 + 1e-9);
+    const wide = computeGeometry(900, 500, 8);
+    expect(wide.rowGap).toBeCloseTo(wide.spacing * 0.92, 9);
   });
 
   it('bins sit between the pegs of the last row', () => {
@@ -102,5 +120,61 @@ describe('trajectory', () => {
 
   it('rejects a path that does not match the board', () => {
     expect(() => buildTrajectory(computeGeometry(390, 480, 8), [0, 1])).toThrow();
+  });
+});
+
+describe('cabinet layout', () => {
+  const sizes: [number, number][] = [
+    [370, 470],
+    [340, 372],
+    [900, 760],
+    [600, 500],
+  ];
+
+  it.each(ROW_OPTIONS)('%i rows: pyramid stays inside the neon, bins sit on the shelf', (rows) => {
+    for (const [w, h] of sizes) {
+      const { geometry: g, cabinet: c } = computeCabinetGeometry(w, h, rows, CABINET_LAYOUT);
+      const { field, shelf } = CABINET_LAYOUT;
+      const fieldEdge = (y: number, side: 'left' | 'right') => {
+        const t = (y - (c.y + field.top * c.h)) / ((field.bottom - field.top) * c.h);
+        const top = side === 'left' ? field.leftTop : field.rightTop;
+        const bottom = side === 'left' ? field.leftBottom : field.rightBottom;
+        return c.x + (top + (bottom - top) * t) * c.w;
+      };
+      expect(c.y + c.h).toBeCloseTo(h, 6);
+      expect(g.topY).toBeGreaterThanOrEqual(c.y + field.top * c.h - 1e-6);
+      for (let r = 0; r < rows; r++) {
+        const y = pegY(g, r);
+        expect(pegX(g, r, 0) - g.spacing * 0.55).toBeGreaterThanOrEqual(
+          fieldEdge(y, 'left') - 1e-6,
+        );
+        expect(pegX(g, r, pegCount(r) - 1) + g.spacing * 0.55).toBeLessThanOrEqual(
+          fieldEdge(y, 'right') + 1e-6,
+        );
+      }
+      expect(pegY(g, rows - 1)).toBeLessThan(c.y + field.bottom * c.h);
+      expect(g.binTop).toBeGreaterThanOrEqual(c.y + shelf.top * c.h - 1e-6);
+      expect(g.binTop + g.binHeight).toBeLessThanOrEqual(c.y + shelf.bottom * c.h + 1e-6);
+      expect(binCenterX(g, 0) - g.binWidth / 2).toBeGreaterThanOrEqual(
+        c.x + shelf.left * c.w - 1e-6,
+      );
+      expect(binCenterX(g, rows) + g.binWidth / 2).toBeLessThanOrEqual(
+        c.x + shelf.right * c.w + 1e-6,
+      );
+      expect(g.ballRadius * 2).toBeLessThan(g.spacing - 2 * g.pegRadius);
+    }
+  });
+
+  it('balls land in the bin from play() inside the cabinet', async () => {
+    const play = createFakeServer({ sleep: () => Promise.resolve() });
+    for (const rows of [8, 16]) {
+      const { geometry: g } = computeCabinetGeometry(370, 470, rows, CABINET_LAYOUT);
+      for (let i = 0; i < 300; i++) {
+        const result = await play({ bet: 100, rows, risk: 'high' });
+        const tr = buildTrajectory(g, result.path);
+        const end = tr.position(tr.duration);
+        expect(binAt(g, end.x, g.binTop + g.binHeight / 2)).toBe(result.bin);
+      }
+    }
   });
 });
