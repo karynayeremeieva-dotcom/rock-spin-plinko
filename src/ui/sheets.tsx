@@ -10,6 +10,7 @@ import { useApp } from './app-context';
 import { binTint } from './format';
 import { useGame, useGameState } from './game-context';
 import { Sheet } from './Sheet';
+import { HowToPlay } from './HowToPlay';
 
 const RISK_SHORT: Record<string, keyof Dictionary> = {
   low: 'riskLow',
@@ -70,14 +71,7 @@ export function RulesSheet({ onClose }: { onClose: () => void }) {
   const { t } = useI18n();
   return (
     <Sheet title={t.howToPlay} onClose={onClose}>
-      <ol className="rules">
-        <li>{t.rules1}</li>
-        <li>{t.rules2}</li>
-        <li>{t.rules3}</li>
-        <li>{t.rules4}</li>
-        <li>{t.rules5}</li>
-        <li>{t.rules6}</li>
-      </ol>
+      <HowToPlay onDone={onClose} />
     </Sheet>
   );
 }
