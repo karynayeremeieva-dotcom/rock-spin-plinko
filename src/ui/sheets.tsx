@@ -17,13 +17,26 @@ const RISK_SHORT: Record<string, keyof Dictionary> = {
   high: 'riskHigh',
 };
 
+const PAGE_SIZE = 10;
+
 export function HistorySheet({ onClose }: { onClose: () => void }) {
   const { t, money, lang } = useI18n();
   const history = useGameState((s) => s.history);
+  const [page, setPage] = useState(0);
+  const pages = Math.max(1, Math.ceil(history.length / PAGE_SIZE));
+  const current = Math.min(page, pages - 1);
+  const from = current * PAGE_SIZE;
+  const rows = history.slice(from, from + PAGE_SIZE);
+  // aria-disabled instead of disabled: a disabled button drops the focus to <body> when
+  // "next" reaches the last page.
+  const turn = (to: number) => {
+    if (to >= 0 && to < pages) setPage(to);
+  };
   const time = new Intl.DateTimeFormat(lang, {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
+    hourCycle: 'h23',
   });
 
   return (
@@ -31,36 +44,96 @@ export function HistorySheet({ onClose }: { onClose: () => void }) {
       {history.length === 0 ? (
         <p className="muted">{t.historyEmpty}</p>
       ) : (
-        <table className="history">
-          <thead>
-            <tr>
-              <th>{t.historyTime}</th>
-              <th className="num">{t.historyBet}</th>
-              <th>{t.historyGame}</th>
-              <th className="num">{t.historyMult}</th>
-              <th className="num">{t.historyPayout}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {history.map((h) => (
-              <tr key={h.id}>
-                <td className="muted">{time.format(h.time)}</td>
-                <td className="num">{money(h.bet)}</td>
-                <td>
-                  {h.rows} · {t[RISK_SHORT[h.risk] ?? 'riskMedium']}
-                </td>
-                <td className="num">
-                  <span className="mult-chip" style={{ background: binTint(h) }}>
-                    {formatMultiplier(h.multiplier, true)}
-                  </span>
-                </td>
-                <td className={`num ${h.payout > h.bet ? 'win' : h.payout < h.bet ? 'loss' : ''}`}>
-                  {money(h.payout)}
-                </td>
+        <>
+          <table className="history">
+            <thead>
+              <tr>
+                <th scope="col">{t.historyTime}</th>
+                <th scope="col" className="num">
+                  {t.historyBet}
+                </th>
+                <th scope="col" className="mid">
+                  {t.historyGame}
+                </th>
+                <th scope="col" className="mid">
+                  <abbr title={t.historyMultFull}>{t.historyMult}</abbr>
+                </th>
+                <th scope="col" className="num">
+                  {t.historyPayout}
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((h) => {
+                const win = h.multiplier >= 1;
+                return (
+                  <tr key={h.id}>
+                    <td className="history__time">
+                      <time dateTime={new Date(h.time).toISOString()}>{time.format(h.time)}</time>
+                    </td>
+                    <td className="num">{money(h.bet)}</td>
+                    <td className="history__game mid">
+                      {h.rows} · {t[RISK_SHORT[h.risk] ?? 'riskMedium']}
+                    </td>
+                    <td className="mid">
+                      <span
+                        className={`mult-chip ${win ? 'mult-chip--win' : 'mult-chip--loss'}`}
+                        style={win ? { background: binTint(h) } : undefined}
+                      >
+                        {formatMultiplier(h.multiplier, true)}
+                      </span>
+                    </td>
+                    <td
+                      className={`num ${h.payout > h.bet ? 'win' : h.payout < h.bet ? 'loss' : ''}`}
+                    >
+                      {money(h.payout)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <p className="sr-only" aria-live="polite">
+            {t.historyRange
+              .replace('{from}', String(from + 1))
+              .replace('{to}', String(from + rows.length))
+              .replace('{total}', String(history.length))}
+          </p>
+          {pages > 1 && (
+            <nav className="pager" aria-label={t.historyPages}>
+              <button
+                type="button"
+                className="pager__btn"
+                aria-label={t.historyPrev}
+                aria-disabled={current === 0}
+                onClick={() => turn(current - 1)}
+              >
+                ‹
+              </button>
+              {Array.from({ length: pages }, (_, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  className="pager__btn"
+                  aria-label={t.historyPage.replace('{n}', String(i + 1))}
+                  aria-current={i === current ? 'page' : undefined}
+                  onClick={() => turn(i)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="pager__btn"
+                aria-label={t.historyNext}
+                aria-disabled={current === pages - 1}
+                onClick={() => turn(current + 1)}
+              >
+                ›
+              </button>
+            </nav>
+          )}
+        </>
       )}
     </Sheet>
   );

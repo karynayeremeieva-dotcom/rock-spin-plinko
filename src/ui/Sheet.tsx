@@ -27,6 +27,27 @@ export function Sheet({ title, onClose, children }: SheetProps) {
     panelRef.current?.focus();
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') closeRef.current();
+      // Keep Tab inside the dialog: the page behind it is inert for the user.
+      if (e.key === 'Tab') {
+        const panel = panelRef.current;
+        if (!panel) return;
+        const items = [
+          ...panel.querySelectorAll<HTMLElement>(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+          ),
+        ].filter((el) => !el.hasAttribute('disabled'));
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (!first || !last) return;
+        const active = document.activeElement;
+        if (e.shiftKey && (active === first || active === panel)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && (active === last || !panel.contains(active))) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
       // Space inside a sheet must not drop balls behind it.
       if (e.code === 'Space') e.stopPropagation();
     };

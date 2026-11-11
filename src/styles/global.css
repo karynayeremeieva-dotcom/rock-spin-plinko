@@ -934,6 +934,18 @@ button:disabled {
   }
 }
 
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .muted {
   color: var(--muted);
 }
@@ -945,30 +957,62 @@ button:disabled {
 .history {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
 
 .history th {
   position: sticky;
   top: 0;
-  padding: 6px 4px;
+  padding: 0 6px 8px;
   background: #141317;
   color: var(--muted);
   font-size: 11px;
   font-weight: 600;
+  letter-spacing: 0.04em;
   text-align: left;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .history td {
-  padding: 7px 4px;
+  height: 40px;
+  padding: 0 6px;
   border-top: 1px solid var(--line);
   white-space: nowrap;
 }
 
+.history th:first-child,
+.history td:first-child {
+  padding-left: 2px;
+}
+
+.history th:last-child,
+.history td:last-child {
+  padding-right: 2px;
+}
+
+.history tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.history abbr {
+  text-decoration: none;
+}
+
 .history .num {
   text-align: right;
+}
+
+/* Rows · risk and the multiplier chip sit centred, so the spare width is shared evenly
+   instead of opening a hole on one side. */
+.history .mid {
+  text-align: center;
+}
+
+.history__time,
+.history__game {
+  color: var(--muted);
 }
 
 .history .win {
@@ -977,18 +1021,81 @@ button:disabled {
 }
 
 .history .loss {
-  color: #ff8a7a;
+  color: var(--muted);
 }
 
 .mult-chip {
   display: inline-block;
-  min-width: 44px;
-  padding: 1px 6px;
-  border-radius: 5px;
-  color: #140d08;
+  min-width: 46px;
+  padding: 2px 6px;
+  border-radius: 6px;
   font-size: 12px;
   font-weight: 800;
   text-align: center;
+}
+
+.mult-chip--win {
+  color: #140d08;
+}
+
+.mult-chip--loss {
+  color: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+@media (max-width: 420px) {
+  .history {
+    font-size: 13px;
+  }
+
+  .history th,
+  .history td {
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .mult-chip {
+    min-width: 40px;
+    padding: 2px 4px;
+  }
+}
+
+.pager {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.pager__btn {
+  min-width: 40px;
+  height: 40px;
+  padding: 0 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.pager__btn:hover:not([aria-disabled='true']) {
+  border-color: var(--line-strong);
+  color: #fff;
+}
+
+.pager__btn[aria-current='page'] {
+  border-color: var(--hot-2);
+  background: rgba(255, 180, 60, 0.12);
+  color: var(--hot-2);
+}
+
+.pager__btn[aria-disabled='true'] {
+  opacity: 0.35;
+  cursor: default;
 }
 
 /* SVG scene text */
