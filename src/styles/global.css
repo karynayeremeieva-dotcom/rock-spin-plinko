@@ -2059,3 +2059,35 @@ button:disabled {
   mask-image: none;
   -webkit-mask-image: none;
 }
+
+/* Results feed: wins are bright tiles in their bin colour, losses stay quiet text. */
+.feed__chip::before {
+  display: none !important;
+}
+
+.feed__chip--win {
+  padding: 0 7px !important;
+  border-radius: 6px;
+  background: var(--tint) !important;
+  color: color-mix(in srgb, var(--tint) 18%, #000) !important;
+  font-weight: 800;
+}
+
+.feed__chip--loss {
+  color: #77726b !important;
+}
+
+.feed__chip--loss:first-child {
+  color: #b9b4ac !important;
+}
+
+/* One row exactly: the feed is as tall as a chip, so a chip that wrapped never peeks out. */
+.feed {
+  height: 22px !important;
+  align-items: flex-start;
+}
+
+.feed__chip {
+  height: 22px !important;
+  line-height: 22px !important;
+}
