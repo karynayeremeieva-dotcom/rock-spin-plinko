@@ -991,207 +991,7 @@ button:disabled {
   text-align: center;
 }
 
-/* ---------- how to play: animated tour ---------- */
-
-.howto {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  text-align: center;
-  touch-action: pan-y;
-}
-
-.howto__slide {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  animation: howto-in 0.35s ease-out;
-}
-
-@keyframes howto-in {
-  from {
-    opacity: 0;
-    transform: translateX(18px);
-  }
-}
-
-.howto__scene {
-  width: 100%;
-  max-width: 320px;
-  aspect-ratio: 240 / 140;
-  border-radius: 14px;
-  background: radial-gradient(120% 90% at 50% 30%, #1c1a20, #0b0b0d);
-  border: 1px solid var(--line);
-  overflow: hidden;
-}
-
-.howto__scene svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.howto__step {
-  margin: 14px 0 2px;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.howto__title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--hot-2);
-  text-shadow: 0 0 14px rgba(255, 140, 40, 0.45);
-}
-
-.howto__text {
-  max-width: 320px;
-  margin: 6px auto 0;
-  font-size: 15px;
-  line-height: 1.5;
-  min-height: 4.5em;
-}
-
-.howto__dots {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-}
-
-.howto__dot {
-  width: 8px;
-  height: 8px;
-  padding: 0;
-  border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.22);
-  transition:
-    width 0.2s,
-    background 0.2s;
-}
-
-.howto__dot--on {
-  width: 24px;
-  background: var(--hot-2);
-}
-
-.howto__nav {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  width: 100%;
-  max-width: 320px;
-}
-
-.howto__back {
-  flex: 0 0 auto;
-  min-width: 96px;
-}
-
-.howto__next {
-  flex: 1 1 auto;
-  height: var(--control-h);
-  border: 0;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #ffb43c 0%, #ff6a1a 55%, #e1400c 100%);
-  color: #1a0b02;
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  transition:
-    transform 0.08s,
-    filter 0.15s;
-}
-
-.howto__next:hover {
-  filter: brightness(1.08);
-}
-
-.howto__next:active {
-  transform: scale(0.97);
-}
-
 /* SVG scene text */
-.howto__svg-num {
-  font: 800 17px var(--font-ui);
-  fill: var(--fg);
-}
-
-.howto__svg-unit {
-  font: 700 11px var(--font-ui);
-  fill: var(--muted);
-}
-
-.howto__svg-label {
-  font: 700 11px var(--font-ui);
-  fill: #e8e4dc;
-}
-
-.howto__svg-bin {
-  font: 800 9px var(--font-ui);
-  fill: #140d08;
-}
-
-.howto__svg-win {
-  font: 800 16px var(--font-ui);
-  fill: var(--win);
-}
-
-.howto__svg-edge {
-  font: 800 13px var(--font-ui);
-}
-
-.howto__svg-bits {
-  font:
-    700 12px ui-monospace,
-    monospace;
-  letter-spacing: 0.08em;
-  fill: #5ee08a;
-}
-
-.howto__svg-badge {
-  font: 800 11px var(--font-ui);
-}
-
-.howto__bar {
-  transform-box: fill-box;
-  transform-origin: bottom;
-  animation: howto-bar 0.6s cubic-bezier(0.3, 1.4, 0.5, 1) both;
-}
-
-@keyframes howto-bar {
-  from {
-    transform: scaleY(0);
-  }
-}
-
-.howto__shield {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: howto-shield 2.4s ease-in-out infinite;
-}
-
-@keyframes howto-shield {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.06);
-  }
-}
-
 .menu {
   display: flex;
   flex-direction: column;
@@ -2045,7 +1845,6 @@ button:disabled {
   color: #f4efe8;
 }
 
-/* The Space shortcut keeps working and is explained in "How to play"; no keycap on the button. */
 .drop-btn__hint {
   display: none !important;
 }
@@ -2090,4 +1889,141 @@ button:disabled {
 .feed__chip {
   height: 22px !important;
   line-height: 22px !important;
+}
+
+/* ---------- how to play: tour over the real screen ---------- */
+
+.tour {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+}
+
+.tour__dim {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.tour__dim path {
+  fill: rgba(4, 4, 6, 0.72);
+  pointer-events: visiblePainted;
+}
+
+.tour__block {
+  position: fixed;
+  pointer-events: auto;
+}
+
+.tour__ring {
+  position: fixed;
+  border-radius: 14px;
+  box-shadow:
+    0 0 0 2px var(--hot-2),
+    0 0 18px 3px rgba(255, 150, 40, 0.55);
+  transition:
+    left 0.3s ease,
+    top 0.3s ease,
+    width 0.3s ease,
+    height 0.3s ease;
+  pointer-events: none;
+}
+
+.tour__card {
+  position: fixed;
+  width: min(340px, calc(100vw - 24px));
+  padding: 14px 16px 12px;
+  border-radius: 16px;
+  background: #141418;
+  border: 1px solid #2c2c33;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  text-align: left;
+  pointer-events: auto;
+  outline: none;
+  transition:
+    left 0.3s ease,
+    top 0.3s ease;
+}
+
+.tour__step {
+  margin: 0 0 2px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.tour__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--hot-2);
+  animation: tour-in 0.3s ease-out;
+}
+
+@keyframes tour-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+
+.tour__text {
+  margin: 6px 0 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #e6e1d9;
+}
+
+.tour__nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tour__skip {
+  margin-right: auto;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  min-height: 44px;
+}
+
+.tour__back,
+.tour__next {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  font-weight: 700;
+}
+
+.tour__back {
+  border: 0;
+  background: #26262b;
+  color: #e6e1d9;
+}
+
+.tour__next {
+  border: 0;
+  background: var(--hot);
+  color: #160a02;
+  font-family: var(--font-display);
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tour__ring,
+  .tour__card {
+    transition: none;
+  }
 }

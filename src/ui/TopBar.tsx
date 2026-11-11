@@ -5,7 +5,8 @@ import { useApp } from './app-context';
 import { useGame, useGameState } from './game-context';
 import { useAnimatedNumber, usePrefersReducedMotion } from './hooks';
 import { IconHistory, IconMenu, IconMute, IconSound } from './icons';
-import { HistorySheet, MenuSheet, RulesSheet } from './sheets';
+import { HistorySheet, MenuSheet } from './sheets';
+import { Tour } from './Tour';
 
 interface WinFlash {
   key: number;
@@ -15,10 +16,34 @@ interface WinFlash {
 
 type OpenSheet = 'history' | 'menu' | 'rules' | null;
 
+const TOUR_KEY = 'rock-spin:tour-seen';
+
 export function TopBar() {
   const { t } = useI18n();
   const { prefs, updatePrefs, sound } = useApp();
   const [open, setOpen] = useState<OpenSheet>(null);
+
+  // First visit: the tour starts by itself once the board has settled.
+  useEffect(() => {
+    let seen = true;
+    try {
+      seen = window.localStorage.getItem(TOUR_KEY) === '1';
+    } catch {
+      seen = true;
+    }
+    if (seen) return;
+    const timer = window.setTimeout(() => setOpen((o) => o ?? 'rules'), 0);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const closeTour = () => {
+    try {
+      window.localStorage.setItem(TOUR_KEY, '1');
+    } catch {
+      // private mode: the tour simply shows again next time
+    }
+    setOpen(null);
+  };
 
   return (
     <header className="topbar">
@@ -61,7 +86,7 @@ export function TopBar() {
       {open === 'menu' && (
         <MenuSheet onClose={() => setOpen(null)} onRules={() => setOpen('rules')} />
       )}
-      {open === 'rules' && <RulesSheet onClose={() => setOpen(null)} />}
+      {open === 'rules' && <Tour onClose={closeTour} />}
     </header>
   );
 }

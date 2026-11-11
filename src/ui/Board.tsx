@@ -9,6 +9,7 @@ import { useApp } from './app-context';
 import { useGame, useGameState } from './game-context';
 import { formatPercent } from './format';
 import { usePrefersReducedMotion } from './hooks';
+import { setBoardHandle } from './tour-bridge';
 
 const BOARD_FONT = "'Inter Variable', system-ui, sans-serif";
 
@@ -65,9 +66,23 @@ export function Board() {
       if (event.type === 'ball') renderer.addBall(event.ball.id, event.ball.result.path);
     });
 
+    // The tour drops free test balls: the engine never sees them (land() ignores unknown ids).
+    let demo = 0;
+    setBoardHandle({
+      canvas: () => canvasRef.current,
+      geometry: () => renderer.getGeometry(),
+      demoDrop: () => {
+        const n = game.getState().rows;
+        const path = Array.from({ length: n }, () => (Math.random() < 0.5 ? 0 : 1) as 0 | 1);
+        demo += 1;
+        renderer.addBall(`tour-demo-${demo}`, path);
+      },
+    });
+
     return () => {
       alive = false;
       off();
+      setBoardHandle(null);
       observer.disconnect();
       renderer.destroy();
       rendererRef.current = null;
