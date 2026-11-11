@@ -1,7 +1,7 @@
 /**
  * The machine cabinet drawn around the board: art plus where its playfield and bin shelf
- * are, as fractions of the image. Measured on `art/cabinet.png` (1792×2400, drawn from a
- * 896×1200 layout).
+ * are, as fractions of the image. Measured on `art/cabinet.png` (1790×2400, drawn from a
+ * 895×1200 layout).
  */
 import cabinetUrl from '../assets/cabinet.webp';
 
@@ -30,18 +30,18 @@ export interface CabinetLayout {
 }
 
 export const CABINET_LAYOUT: CabinetLayout = {
-  aspect: 896 / 1200,
+  aspect: 895 / 1200,
   field: {
-    top: 0.121,
-    bottom: 0.7833,
-    leftTop: 0.4354,
-    rightTop: 0.5646,
-    leftBottom: 0.1305,
-    rightBottom: 0.8702,
+    top: 0.1221,
+    bottom: 0.7808,
+    leftTop: 0.4374,
+    rightTop: 0.5621,
+    leftBottom: 0.1357,
+    rightBottom: 0.8651,
     corner: 30 / 1200,
-    topCorner: 40 / 1200,
+    topCorner: 20 / 1200,
   },
-  channels: { top: 0.7917, bottom: 0.8125 },
+  channels: { top: 0.79, bottom: 0.804 },
   shelf: { top: 0.855, bottom: 0.94, left: 0.095, right: 0.905 },
 };
 

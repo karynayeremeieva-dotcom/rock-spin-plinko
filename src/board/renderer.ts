@@ -594,21 +594,44 @@ export class BoardRenderer {
     drawChannels();
 
     function drawChannels() {
-      // Channels into the bins: alternate the two hues, swelling towards the shelf. With the
-      // cabinet art they sit in the gap under the plate's bottom edge.
+      // Dividers into the bins: brushed steel pins in the gap under the plate's bottom edge,
+      // like the cabinet's metal, so the only neon is the cabinet's own.
       const top = field.channelTop ?? rowY(lastRow) + g.rowGap * 0.6;
       const bottom = field.channelBottom ?? field.bottom;
+      const pinW = Math.max(1.2, Math.min(2.2, s * 0.085));
+      const len = bottom - top;
       for (let k = 1; k <= rows; k++) {
         const x = binCenterX(g, k) - s / 2;
-        tube(
-          [
-            [x, top],
-            [x, bottom],
-          ],
-          k % 2 === 0 ? colorA : colorB,
-          w * 0.45,
-          w * 1.0,
+        // soft contact shadow on the floor
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+        ctx.beginPath();
+        ctx.roundRect(x - pinW * 0.5 + pinW * 0.6, top + pinW * 0.6, pinW * 1.3, len, pinW);
+        ctx.fill();
+        // the pin: dark edges, a bright highlight on the left, like a chrome rod lit from the top-left
+        const body = ctx.createLinearGradient(x - pinW / 2, 0, x + pinW / 2, 0);
+        body.addColorStop(0, '#3a3d43');
+        body.addColorStop(0.3, '#e4e7ec');
+        body.addColorStop(0.55, '#8d929b');
+        body.addColorStop(1, '#2b2e33');
+        ctx.fillStyle = body;
+        ctx.beginPath();
+        ctx.roundRect(x - pinW / 2, top, pinW, len, pinW / 2);
+        ctx.fill();
+        // a faint glint at the top cap
+        const cap = ctx.createRadialGradient(
+          x - pinW * 0.15,
+          top + pinW * 0.5,
+          0,
+          x,
+          top + pinW * 0.5,
+          pinW,
         );
+        cap.addColorStop(0, 'rgba(255, 255, 255, 0.85)');
+        cap.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = cap;
+        ctx.beginPath();
+        ctx.arc(x, top + pinW * 0.5, pinW, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
   }
