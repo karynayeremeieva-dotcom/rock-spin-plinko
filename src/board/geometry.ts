@@ -65,7 +65,7 @@ export function computeGeometry(width: number, height: number, rows: number): Bo
     rows,
     spacing,
     rowGap,
-    pegRadius: Math.max(2, spacing * 0.15),
+    pegRadius: Math.max(2.5, spacing * 0.19),
     ballRadius: Math.max(3.5, spacing * 0.27),
     centerX: width / 2,
     spawnY,
@@ -90,25 +90,41 @@ export const NEON_MARGIN = 0.75;
 /** Gap between the two parallel neon tubes, in pitches. */
 export const NEON_GAP = 0.3;
 /** Largest row gap inside the cabinet, in pitches. */
-const MAX_ROW_GAP = 1.12;
-/** Minimum height of the neon channels between the last row and the bin shelf, in pitches. */
-const CHANNEL_RATIO = 1.3;
+const MAX_ROW_GAP = 1.3;
+/** From the last row to the plate's bottom edge, in pitches. */
+const BOTTOM_GAP = 0.8;
+/** From the top of the plate to row 0, in pitches (the spawn point sits in between). */
+const TOP_GAP = 1.1;
+/** Closest a peg centre may come to the plate edge, in pitches. */
+export const PEG_EDGE = 0.6;
 /** Gap between the top of the field and the neon roof over the spawn point, in pitches. */
 export const ROOF_RATIO = 0.8;
 /** How much wider than its art the cabinet may be drawn (rivets and neon hide the stretch). */
 const CABINET_MAX_STRETCH = 1.18;
 
+export interface CabinetField {
+  top: number;
+  bottom: number;
+  /** Bin channels between the plate's bottom edge and the neon under it. */
+  channelTop: number;
+  channelBottom: number;
+  /** Left and right edge of the dark plate at height y (rounded corners included). */
+  edgesAt(y: number): [number, number];
+}
+
 /**
  * Board laid out inside the machine cabinet: the cabinet is scaled to fit the canvas
- * (bottom-aligned, centred; on narrow screens its outer frame may be cropped a little),
- * the pyramid fills the playfield and the bins sit in the shelf.
+ * (bottom-aligned, centred; on narrow screens its outer frame may be cropped a little).
+ * Row 0 sits just under the top of the dark plate, the last row just above the neon
+ * channels, and the pitch is the largest that keeps every row on the plate and the bins
+ * on the shelf. The renderer fills the rest of each row with decorative pegs.
  */
 export function computeCabinetGeometry(
   width: number,
   height: number,
   rows: number,
   layout: CabinetLayout,
-): { geometry: BoardGeometry; cabinet: CabinetRect; field: { top: number; bottom: number } } {
+): { geometry: BoardGeometry; cabinet: CabinetRect; field: CabinetField } {
   const { field, shelf, aspect } = layout;
   const cabH = Math.min(height, (width * CABINET_MAX_OVERFLOW) / aspect);
   const cabW = Math.min(width * CABINET_MAX_OVERFLOW, cabH * aspect * CABINET_MAX_STRETCH);
@@ -117,47 +133,105 @@ export function computeCabinetGeometry(
 
   const fieldTop = py(field.top);
   const fieldBottom = py(field.bottom);
-  const fieldBottomWidth = (field.rightBottom - field.leftBottom) * cab.w;
+  const straight = (y: number): [number, number] => {
+    const t = (y - fieldTop) / (fieldBottom - fieldTop);
+    return [
+      cab.x + (field.leftTop + (field.leftBottom - field.leftTop) * t) * cab.w,
+      cab.x + (field.rightTop + (field.rightBottom - field.rightTop) * t) * cab.w,
+    ];
+  };
+  // Rounded corners: circles (ellipses once the art is stretched) tangent to the side and
+  // to the top or bottom edge. Between an edge and its tangent point the plate follows the arc.
+  const sideSlope =
+    ((field.leftBottom - field.leftTop) / (field.bottom - field.top)) * (cab.w / cab.h);
+  const lean = Math.hypot(1, sideSlope);
+  const fillet = (radius: number, centerY: number) => {
+    const ry = radius * cab.h;
+    const rx = (radius / aspect) * cab.w;
+    const [l, r] = straight(centerY);
+    return {
+      ry,
+      rx,
+      centerY,
+      leftCx: l + rx * lean,
+      rightCx: r - rx * lean,
+      // the side touches the circle above its centre (the side leans outwards going down)
+      tangentY: centerY + (ry * sideSlope) / lean,
+    };
+  };
+  const bottomArc = fillet(field.corner, fieldBottom - field.corner * cab.h);
+  const topArc = fillet(field.topCorner, fieldTop + field.topCorner * cab.h);
+  const onArc = (arc: ReturnType<typeof fillet>, y: number): [number, number] => {
+    const dy = Math.max(-1, Math.min(1, (y - arc.centerY) / arc.ry));
+    const k = Math.sqrt(Math.max(0, 1 - dy * dy));
+    return [arc.leftCx - arc.rx * k, arc.rightCx + arc.rx * k];
+  };
+  const edgesAt = (y: number): [number, number] => {
+    const [l, r] = straight(y);
+    const arc = y > bottomArc.tangentY ? bottomArc : y < topArc.tangentY ? topArc : null;
+    if (!arc) return [l, r];
+    const [al, ar] = onArc(arc, y);
+    return [Math.max(l, al), Math.min(r, ar)];
+  };
   const shelfTop = py(shelf.top);
   const shelfHeight = py(shelf.bottom) - shelfTop;
   const shelfWidth = (shelf.right - shelf.left) * cab.w;
+  const centerX = width / 2;
 
-  // Widest row spans rows + 1 pitches, plus the neon outline NEON_MARGIN outside it on
-  // each side; bins span rows + 1 pitches.
-  const bySpan = Math.min(
-    fieldBottomWidth / (rows + 1 + 2 * (NEON_MARGIN + NEON_GAP) + 0.3),
-    shelfWidth / (rows + 1.2),
-  );
-  const heightUnits = ROOF_RATIO + SPAWN_RATIO + (rows - 1) * ROW_GAP_RATIO + CHANNEL_RATIO;
-  const spacing = Math.max(1, Math.min(bySpan, (fieldBottom - fieldTop) / heightUnits));
-
-  // Short neon channels sit right above the shelf. Spare height first opens the rows up a
-  // little (at most to 1.12 pitch, beyond that it reads as a ladder); what is still left
-  // is split above and below.
-  const spare = fieldBottom - fieldTop - spacing * heightUnits;
-  const rowExtra =
-    rows > 1
-      ? Math.max(0, Math.min(spare / (rows - 1), spacing * (MAX_ROW_GAP - ROW_GAP_RATIO)))
-      : 0;
-  const rowGap = spacing * ROW_GAP_RATIO + rowExtra;
-  // Whatever is still left is split evenly above and below, so the pyramid sits centred in
-  // the panel (the lower half lengthens the channels a little).
-  const above = Math.max(0, spare - rowExtra * (rows - 1)) / 2;
-  const topY = fieldTop + above + spacing * (ROOF_RATIO + SPAWN_RATIO);
+  const layoutFor = (s: number) => {
+    const top = fieldTop + TOP_GAP * s;
+    const lastY = fieldBottom - BOTTOM_GAP * s;
+    const free = rows > 1 ? (lastY - top) / (rows - 1) : s;
+    const rowGap = Math.min(MAX_ROW_GAP * s, free);
+    // Height the rows can't use is shared above and below, so the pyramid sits centred on
+    // the plate instead of leaving all of it at the bottom.
+    const spare = Math.max(0, lastY - top - (rows - 1) * rowGap);
+    const gaps = (TOP_GAP + BOTTOM_GAP) * s + spare; // room above row 0 plus below the last row
+    const topY = fieldTop + Math.min(TOP_GAP * s + spare, Math.max(TOP_GAP * s, gaps / 2));
+    return { topY, rowGap, free };
+  };
+  // The plate's corners are rounded, so every row is checked against its edges.
+  const fits = (s: number) => {
+    const { topY, rowGap, free } = layoutFor(s);
+    if (free < ROW_GAP_RATIO * s || (rows + 1.2) * s > shelfWidth) return false;
+    for (let r = 0; r < rows; r++) {
+      const half = ((r + 2) / 2 + PEG_EDGE) * s;
+      const [left, right] = edgesAt(topY + r * rowGap);
+      if (centerX - half < left || centerX + half > right) return false;
+    }
+    return true;
+  };
+  let lo = 1;
+  let hi = Math.max(1, fieldBottom - fieldTop);
+  for (let i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (fits(mid)) lo = mid;
+    else hi = mid;
+  }
+  const spacing = lo;
+  const { topY, rowGap } = layoutFor(spacing);
   const binHeight = Math.min(shelfHeight * 0.82, spacing * 2.1);
 
   return {
     cabinet: cab,
-    field: { top: fieldTop, bottom: fieldBottom },
+    field: {
+      top: fieldTop,
+      bottom: fieldBottom,
+      channelTop: py(layout.channels.top),
+      channelBottom: py(layout.channels.bottom),
+      edgesAt,
+    },
     geometry: {
       width,
       height,
       rows,
       spacing,
       rowGap,
-      pegRadius: Math.max(2, spacing * 0.15),
-      ballRadius: Math.max(3.5, spacing * 0.27),
-      centerX: width / 2,
+      // Floors keep pegs and the ball visible on tiny boards; they still leave the ball room
+      // to pass between two pegs at 16 rows on the smallest phone.
+      pegRadius: Math.max(2, spacing * 0.19),
+      ballRadius: Math.max(3, spacing * 0.27),
+      centerX,
       spawnY: topY - spacing * SPAWN_RATIO,
       topY,
       binTop: shelfTop + (shelfHeight - binHeight) / 2,

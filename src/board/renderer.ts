@@ -87,6 +87,8 @@ export class BoardRenderer {
   /** Machine cabinet art; the board is laid out inside it once the image has loaded. */
   private cabinetImg: HTMLImageElement | null = null;
   private cabinetLayer: HTMLCanvasElement | null = null;
+  /** Peg index range per row of the play pyramid (strings run across it). */
+  private pegRange: [number, number][] = [];
   private neonScheme: NeonScheme = 'cool';
   private pegImg: HTMLCanvasElement | null = null;
   private pegGlowImg: HTMLCanvasElement | null = null;
@@ -229,6 +231,7 @@ export class BoardRenderer {
     } else {
       g = computeGeometry(this.width, this.height, this.rows);
     }
+    this.pegRange = Array.from({ length: g.rows }, (_, row) => [0, pegCount(row) - 1]);
     this.geometry = g;
     const d = this.dpr;
 
@@ -258,10 +261,7 @@ export class BoardRenderer {
     const lctx = layer.getContext('2d');
     if (lctx) {
       lctx.setTransform(d, 0, 0, d, 0, 0);
-      for (let row = 0; row < g.rows; row++) {
-        for (let i = 0; i < pegCount(row); i++) this.drawPeg(lctx, g, row, i, 1);
-        this.drawStringAnchors(lctx, g, row);
-      }
+      for (let row = 0; row < g.rows; row++) this.drawRowPegs(lctx, g, row, 1);
     }
     this.pegLayer = layer;
     // The cabinet's own dark playfield replaces the soft backplate.
@@ -367,7 +367,7 @@ export class BoardRenderer {
       for (let row = 0; row < g.rows; row++) {
         const scale = popIn((sinceTransition - row * 0.016) / 0.22);
         if (scale <= 0) continue;
-        for (let i = 0; i < pegCount(row); i++) this.drawPeg(ctx, g, row, i, scale);
+        this.drawRowPegs(ctx, g, row, scale);
       }
     } else if (this.pegLayer) {
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -404,7 +404,13 @@ export class BoardRenderer {
   private buildCabinetLayer(
     rect: { x: number; y: number; w: number; h: number },
     g: BoardGeometry,
-    field: { top: number; bottom: number },
+    field: {
+      top: number;
+      bottom: number;
+      channelTop?: number;
+      channelBottom?: number;
+      edgesAt?: (y: number) => [number, number];
+    },
   ) {
     const img = this.cabinetImg;
     if (!img) return null;
@@ -431,7 +437,7 @@ export class BoardRenderer {
   private drawNeon(
     ctx: CanvasRenderingContext2D,
     g: BoardGeometry,
-    field: { top: number; bottom: number },
+    field: { top: number; bottom: number; channelTop?: number; channelBottom?: number },
     cab: { x: number; y: number; w: number; h: number },
   ): void {
     type Pt = [number, number];
@@ -588,14 +594,16 @@ export class BoardRenderer {
     drawChannels();
 
     function drawChannels() {
-      // Channels into the bins: alternate the two hues, swelling towards the shelf.
-      const top = rowY(lastRow) + g.rowGap * 0.6;
+      // Channels into the bins: alternate the two hues, swelling towards the shelf. With the
+      // cabinet art they sit in the gap under the plate's bottom edge.
+      const top = field.channelTop ?? rowY(lastRow) + g.rowGap * 0.6;
+      const bottom = field.channelBottom ?? field.bottom;
       for (let k = 1; k <= rows; k++) {
         const x = binCenterX(g, k) - s / 2;
         tube(
           [
             [x, top],
-            [x, field.bottom],
+            [x, bottom],
           ],
           k % 2 === 0 ? colorA : colorB,
           w * 0.45,
@@ -640,9 +648,11 @@ export class BoardRenderer {
 
   /** String span for a row: anchors sit just outside the first and last peg. */
   private stringSpan(g: BoardGeometry, row: number) {
-    const first = pegX(g, row, 0);
-    const last = pegX(g, row, pegCount(row) - 1);
-    return { first, last, left: first - g.spacing * 0.55, right: last + g.spacing * 0.55 };
+    const [from, to] = this.pegRange[row] ?? [0, pegCount(row) - 1];
+    const first = pegX(g, row, from);
+    const last = pegX(g, row, to);
+    // The string ends on the outer pegs; nothing hangs past them.
+    return { first, last, left: first, right: last };
   }
 
   private stringWidth(g: BoardGeometry, row: number): number {
@@ -706,16 +716,13 @@ export class BoardRenderer {
     ctx.globalAlpha = 1;
   }
 
-  private drawStringAnchors(ctx: CanvasRenderingContext2D, g: BoardGeometry, row: number): void {
-    const { left, right } = this.stringSpan(g, row);
-    const y = pegY(g, row);
-    const r = Math.max(1.2, g.pegRadius * 0.7);
-    ctx.fillStyle = BOARD_COLORS.stringAnchor;
-    for (const x of [left, right]) {
-      ctx.beginPath();
-      ctx.arc(x, y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
+  private drawRowPegs(
+    ctx: CanvasRenderingContext2D,
+    g: BoardGeometry,
+    row: number,
+    scale: number,
+  ): void {
+    for (let i = 0; i < pegCount(row); i++) this.drawPeg(ctx, g, row, i, scale);
   }
 
   private drawPeg(
@@ -725,9 +732,20 @@ export class BoardRenderer {
     index: number,
     scale: number,
   ): void {
-    if (!this.pegImg) return;
-    const size = (g.pegRadius * 2 + 2 / this.dpr) * scale;
-    ctx.drawImage(this.pegImg, pegX(g, row, index) - size / 2, pegY(g, row) - size / 2, size, size);
+    const img = this.pegImg;
+    if (!img) return;
+    const d = this.dpr;
+    // Snapped to device pixels and drawn at the sprite's own size, so all pegs look identical
+    // (fractional positions made some of them softer and seemingly bigger).
+    const side = img.width / d;
+    if (scale === 1) {
+      const x = Math.round(pegX(g, row, index) * d - img.width / 2) / d;
+      const y = Math.round(pegY(g, row) * d - img.height / 2) / d;
+      ctx.drawImage(img, x, y, side, side);
+      return;
+    }
+    const size = side * scale;
+    ctx.drawImage(img, pegX(g, row, index) - size / 2, pegY(g, row) - size / 2, size, size);
   }
 
   private drawBins(g: BoardGeometry, scale: number): void {

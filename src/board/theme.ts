@@ -12,7 +12,6 @@ export const BOARD_COLORS = {
   neonLeft: '#ff8a2a',
   neonRight: '#3d8bff',
   stringHot: 'rgba(255, 150, 50, 1)',
-  stringAnchor: '#6b7079',
   ball: ['#fffbea', '#ffe7a3', '#ffb43c', 'rgba(255, 106, 24, 0.55)', 'rgba(255, 60, 0, 0)'],
   binText: '#140d08',
 } as const;
@@ -65,7 +64,8 @@ function makeCanvas(width: number, height: number) {
 
 /** Chrome rivet. Sprite size = 2 × radius (device px). */
 export function pegSprite(radius: number): HTMLCanvasElement {
-  const size = radius * 2 + 2;
+  // Whole pixels, centred: every peg is then drawn 1:1 from the same bitmap.
+  const size = Math.ceil(radius * 2 + 2);
   const { canvas, ctx } = makeCanvas(size, size);
   const c = size / 2;
   ctx.fillStyle = BOARD_COLORS.peg.rim;
