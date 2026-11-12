@@ -302,8 +302,8 @@ export function neonBinSprites(
     const r = Math.min(width, height) * 0.2;
     const line = Math.max(1, height * 0.045);
 
-    ctx.shadowColor = rgb(color, lit ? 0.95 : 0.55);
-    ctx.shadowBlur = pad * (lit ? 0.9 : 0.35);
+    ctx.shadowColor = rgb(color, lit ? 0.9 : 0.3);
+    ctx.shadowBlur = pad * (lit ? 0.8 : 0.2);
     const body = ctx.createLinearGradient(0, y, 0, y + height);
     if (lit) {
       body.addColorStop(0, rgb(shade(color, 0.25), 0.95));
@@ -316,12 +316,12 @@ export function neonBinSprites(
     roundRect(ctx, x + line / 2, y + line / 2, width - line, height - line, r);
     ctx.fill();
     ctx.shadowBlur = 0;
-    ctx.strokeStyle = rgb(shade(color, 0.15), lit ? 1 : 0.9);
+    ctx.strokeStyle = rgb(shade(color, 0.15), lit ? 1 : 0.65);
     ctx.lineWidth = line;
     ctx.stroke();
 
     const size = fontSize ?? binLabelSize([label], width, height, fontFamily);
-    ctx.font = `800 ${size}px ${fontFamily}`;
+    ctx.font = `500 ${size}px ${fontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     const text = binLabel(label);
@@ -331,15 +331,12 @@ export function neonBinSprites(
       ctx.fillStyle = rgb(shade(color, -0.82));
       ctx.fillText(text, tx, ty);
     } else {
-      // A tight coloured glow behind, then crisp near-white digits on top: readable first,
-      // neon second.
-      ctx.shadowColor = rgb(color, 0.9);
-      ctx.shadowBlur = size * 0.35;
-      ctx.fillStyle = rgb(color);
-      ctx.fillText(text, tx, ty);
-      ctx.shadowBlur = 0;
+      // Crisp near-white digits with only a faint coloured glow: readable first, neon second.
+      ctx.shadowColor = rgb(color, 0.45);
+      ctx.shadowBlur = size * 0.18;
       ctx.fillStyle = rgb(shade(color, 0.86));
       ctx.fillText(text, tx, ty);
+      ctx.shadowBlur = 0;
     }
     return canvas;
   };

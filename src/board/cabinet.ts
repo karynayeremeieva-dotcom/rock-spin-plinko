@@ -4,7 +4,6 @@
  * (1016×1414, cropped to the guitar from `art/cabinet-guitar-source.webp`).
  */
 import cabinetUrl from '../assets/cabinet.webp';
-import minimalUrl from '../assets/cabinet-minimal.webp';
 import type { Skin } from '../core/storage';
 
 export interface CabinetLayout {
@@ -85,9 +84,10 @@ export const MINIMAL_LAYOUT: CabinetLayout = {
   maxRowGap: 1.22,
 };
 
-export const CABINETS: Record<Skin, { url: string; layout: CabinetLayout }> = {
+/** `url: null` = the cabinet is drawn in code (see glass.ts), not loaded as an image. */
+export const CABINETS: Record<Skin, { url: string | null; layout: CabinetLayout }> = {
   guitar: { url: cabinetUrl, layout: CABINET_LAYOUT },
-  minimal: { url: minimalUrl, layout: MINIMAL_LAYOUT },
+  minimal: { url: null, layout: MINIMAL_LAYOUT },
 };
 
 /** The art carries its own colour; code draws only the steel bin dividers. */

@@ -14,6 +14,7 @@
 import type { Direction } from '../core/rng';
 import type { Skin } from '../core/storage';
 import { CABINET_HAS_NEON, CABINETS, type CabinetLayout } from './cabinet';
+import { drawGlassTriangle } from './glass';
 import {
   NEON_GAP,
   NEON_MARGIN,
@@ -93,6 +94,8 @@ export class BoardRenderer {
   private backplate: HTMLCanvasElement | null = null;
   /** Machine cabinet art; the board is laid out inside it once the image has loaded. */
   private cabinetImg: HTMLImageElement | null = null;
+  /** Cabinet art (or the vector cabinet) is ready: lay the board out inside it. */
+  private cabinetReady = false;
   private cabinetLayer: HTMLCanvasElement | null = null;
   private skin: Skin = 'guitar';
   private cabinetLayout: CabinetLayout = CABINETS.guitar.layout;
@@ -211,14 +214,22 @@ export class BoardRenderer {
     this.skin = skin;
     if (typeof Image === 'undefined') return;
     const { url, layout } = CABINETS[skin];
+    const apply = (img: HTMLImageElement | null) => {
+      this.cabinetImg = img;
+      this.cabinetLayout = layout;
+      this.neon = skin === 'minimal';
+      this.cabinetReady = true;
+      this.rebuild(false);
+    };
+    if (!url) {
+      apply(null);
+      return;
+    }
     const img = new Image();
     img.decoding = 'async';
     img.onload = () => {
       if (this.destroyed || this.skin !== skin) return;
-      this.cabinetImg = img;
-      this.cabinetLayout = layout;
-      this.neon = skin === 'minimal';
-      this.rebuild(false);
+      apply(img);
     };
     img.src = url;
   }
@@ -253,7 +264,7 @@ export class BoardRenderer {
     if (this.width <= 0 || this.height <= 0 || this.table.length !== this.rows + 1) return;
     let g: BoardGeometry;
     this.cabinetLayer = null;
-    if (this.cabinetImg) {
+    if (this.cabinetReady) {
       const fit = computeCabinetGeometry(this.width, this.height, this.rows, this.cabinetLayout);
       g = fit.geometry;
       this.cabinetLayer = this.buildCabinetLayer(fit.cabinet, g, fit.field);
@@ -452,7 +463,7 @@ export class BoardRenderer {
     },
   ) {
     const img = this.cabinetImg;
-    if (!img) return null;
+    if (!img && !this.neon) return null;
     const layer = document.createElement('canvas');
     layer.width = this.canvas.width;
     layer.height = this.canvas.height;
@@ -460,8 +471,9 @@ export class BoardRenderer {
     if (!lctx) return null;
     const d = this.dpr;
     lctx.imageSmoothingQuality = 'high';
-    lctx.drawImage(img, rect.x * d, rect.y * d, rect.w * d, rect.h * d);
+    if (img) lctx.drawImage(img, rect.x * d, rect.y * d, rect.w * d, rect.h * d);
     lctx.setTransform(d, 0, 0, d, 0, 0);
+    if (!img) drawGlassTriangle(lctx, rect);
     this.drawNeon(lctx, g, field, rect);
     return layer;
   }
