@@ -257,30 +257,7 @@ export function binSprites(
   return { normal: draw(false), lit: draw(true), pad };
 }
 
-// ---------- neon style (the minimalist glass triangle) ----------
-
-/** Neon peg: a small white-hot core inside a soft cool halo. Sprite size = 2 × radius × 2.2. */
-export const NEON_PEG_SCALE = 2.2;
-
-export function neonPegSprite(radius: number): HTMLCanvasElement {
-  const R = Math.ceil(radius * NEON_PEG_SCALE);
-  const { canvas, ctx } = makeCanvas(R * 2, R * 2);
-  const halo = ctx.createRadialGradient(R, R, radius * 0.3, R, R, R);
-  halo.addColorStop(0, 'rgba(220, 230, 255, 0.55)');
-  halo.addColorStop(0.45, 'rgba(170, 190, 255, 0.14)');
-  halo.addColorStop(1, 'rgba(150, 170, 255, 0)');
-  ctx.fillStyle = halo;
-  ctx.fillRect(0, 0, R * 2, R * 2);
-  const core = ctx.createRadialGradient(R, R, 0, R, R, radius * 0.62);
-  core.addColorStop(0, '#ffffff');
-  core.addColorStop(0.7, '#eef2ff');
-  core.addColorStop(1, 'rgba(230, 236, 255, 0.9)');
-  ctx.fillStyle = core;
-  ctx.beginPath();
-  ctx.arc(R, R, radius * 0.62, 0, Math.PI * 2);
-  ctx.fill();
-  return canvas;
-}
+// ---------- neon style (the minimalist obsidian triangle) ----------
 
 /**
  * Neon bin: dark glass with a thin outline and glowing digits in the bin's colour.
@@ -341,4 +318,74 @@ export function neonBinSprites(
     return canvas;
   };
   return { normal: draw(false), lit: draw(true), pad };
+}
+
+/**
+ * Polished chrome ball for the crystal design: dark steel body, a sharp highlight at the
+ * top left, and the frame's warm and cool light reflected on its left and right flanks.
+ * Sprite size = 2 × radius + 2 (device px), like pegSprite.
+ */
+export function chromeBallSprite(radius: number): HTMLCanvasElement {
+  const size = Math.ceil(radius * 2 + 2);
+  const { canvas, ctx } = makeCanvas(size, size);
+  const c = size / 2;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(c, c, radius, 0, Math.PI * 2);
+  ctx.clip();
+  // steel body: light from the top, darker towards the bottom rim
+  const body = ctx.createLinearGradient(0, c - radius, 0, c + radius);
+  body.addColorStop(0, '#d9dde3');
+  body.addColorStop(0.45, '#6d737c');
+  body.addColorStop(0.75, '#2a2d33');
+  body.addColorStop(1, '#8a9099');
+  ctx.fillStyle = body;
+  ctx.fillRect(0, 0, size, size);
+  // warm reflection on the left flank, cool on the right
+  const warm = ctx.createRadialGradient(
+    c - radius * 0.7,
+    c + radius * 0.3,
+    0,
+    c - radius * 0.7,
+    c + radius * 0.3,
+    radius * 0.8,
+  );
+  warm.addColorStop(0, 'rgba(255, 150, 60, 0.55)');
+  warm.addColorStop(1, 'rgba(255, 150, 60, 0)');
+  ctx.fillStyle = warm;
+  ctx.fillRect(0, 0, size, size);
+  const cool = ctx.createRadialGradient(
+    c + radius * 0.7,
+    c + radius * 0.3,
+    0,
+    c + radius * 0.7,
+    c + radius * 0.3,
+    radius * 0.8,
+  );
+  cool.addColorStop(0, 'rgba(90, 160, 255, 0.55)');
+  cool.addColorStop(1, 'rgba(90, 160, 255, 0)');
+  ctx.fillStyle = cool;
+  ctx.fillRect(0, 0, size, size);
+  ctx.restore();
+  // sharp specular highlight
+  const spec = ctx.createRadialGradient(
+    c - radius * 0.32,
+    c - radius * 0.38,
+    0,
+    c - radius * 0.32,
+    c - radius * 0.38,
+    radius * 0.42,
+  );
+  spec.addColorStop(0, 'rgba(255, 255, 255, 1)');
+  spec.addColorStop(0.5, 'rgba(255, 255, 255, 0.5)');
+  spec.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = spec;
+  ctx.beginPath();
+  ctx.arc(c, c, radius, 0, Math.PI * 2);
+  ctx.fill();
+  // thin dark outline keeps the ball crisp on the black plate
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+  ctx.lineWidth = Math.max(1, radius * 0.1);
+  ctx.stroke();
+  return canvas;
 }

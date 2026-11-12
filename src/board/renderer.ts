@@ -14,7 +14,6 @@
 import type { Direction } from '../core/rng';
 import type { Skin } from '../core/storage';
 import { CABINET_HAS_NEON, CABINETS, type CabinetLayout } from './cabinet';
-import { drawGlassTriangle } from './glass';
 import {
   NEON_GAP,
   NEON_MARGIN,
@@ -33,8 +32,8 @@ import {
   binColor,
   binLabelSize,
   binSprites,
+  chromeBallSprite,
   neonBinSprites,
-  neonPegSprite,
   glowSprite,
   pegSprite,
   type BinSpriteSet,
@@ -99,7 +98,7 @@ export class BoardRenderer {
   private cabinetLayer: HTMLCanvasElement | null = null;
   private skin: Skin = 'guitar';
   private cabinetLayout: CabinetLayout = CABINETS.guitar.layout;
-  /** Minimalist design: glowing pegs without strings, glass bins, coloured peg flashes. */
+  /** Minimalist design: chrome ball pegs without strings, glass bins, coloured peg flashes. */
   private neon = false;
   private pegGlowB: HTMLCanvasElement | null = null;
   /** Peg index range per row of the play pyramid (strings run across it). */
@@ -214,17 +213,13 @@ export class BoardRenderer {
     this.skin = skin;
     if (typeof Image === 'undefined') return;
     const { url, layout } = CABINETS[skin];
-    const apply = (img: HTMLImageElement | null) => {
+    const apply = (img: HTMLImageElement) => {
       this.cabinetImg = img;
       this.cabinetLayout = layout;
       this.neon = skin === 'minimal';
       this.cabinetReady = true;
       this.rebuild(false);
     };
-    if (!url) {
-      apply(null);
-      return;
-    }
     const img = new Image();
     img.decoding = 'async';
     img.onload = () => {
@@ -275,7 +270,7 @@ export class BoardRenderer {
     this.geometry = g;
     const d = this.dpr;
 
-    this.pegImg = this.neon ? neonPegSprite(g.pegRadius * d) : pegSprite(g.pegRadius * d);
+    this.pegImg = this.neon ? chromeBallSprite(g.pegRadius * 1.15 * d) : pegSprite(g.pegRadius * d);
     this.pegGlowImg = glowSprite(
       g.pegRadius * 4 * d,
       this.neon ? 'rgba(255, 150, 60, 1)' : BOARD_COLORS.pegGlow,
@@ -463,7 +458,7 @@ export class BoardRenderer {
     },
   ) {
     const img = this.cabinetImg;
-    if (!img && !this.neon) return null;
+    if (!img) return null;
     const layer = document.createElement('canvas');
     layer.width = this.canvas.width;
     layer.height = this.canvas.height;
@@ -471,9 +466,8 @@ export class BoardRenderer {
     if (!lctx) return null;
     const d = this.dpr;
     lctx.imageSmoothingQuality = 'high';
-    if (img) lctx.drawImage(img, rect.x * d, rect.y * d, rect.w * d, rect.h * d);
+    lctx.drawImage(img, rect.x * d, rect.y * d, rect.w * d, rect.h * d);
     lctx.setTransform(d, 0, 0, d, 0, 0);
-    if (!img) drawGlassTriangle(lctx, rect);
     this.drawNeon(lctx, g, field, rect);
     return layer;
   }
@@ -836,7 +830,7 @@ export class BoardRenderer {
       const pad = sprite.pad / this.dpr;
       const w = (g.binWidth + pad * 2) * scale;
       const h = (g.binHeight + pad * 2) * scale;
-      const cx = g.centerX + (k - g.rows / 2) * g.spacing;
+      const cx = binCenterX(g, k);
       const cy = g.binTop + g.binHeight / 2 + bounce;
       ctx.drawImage(sprite.normal, cx - w / 2, cy - h / 2, w, h);
       if (age < BIN_FLASH) {

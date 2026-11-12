@@ -25,6 +25,8 @@ export interface BoardGeometry {
   binTop: number;
   binHeight: number;
   binWidth: number;
+  /** Distance between bin centres; equals `spacing` unless the bins are spread over a wider shelf. */
+  binPitch: number;
 }
 
 const ROW_GAP_RATIO = 0.92;
@@ -73,6 +75,7 @@ export function computeGeometry(width: number, height: number, rows: number): Bo
     binTop,
     binHeight,
     binWidth: spacing * 0.94,
+    binPitch: spacing,
   };
 }
 
@@ -128,7 +131,10 @@ export function computeCabinetGeometry(
   const { field, shelf, aspect } = layout;
   const overflow = layout.maxOverflow ?? CABINET_MAX_OVERFLOW;
   const cabH = Math.min(height, (width * overflow) / aspect);
-  const cabW = Math.min(width * overflow, cabH * aspect * CABINET_MAX_STRETCH);
+  const cabW = Math.min(
+    width * overflow,
+    cabH * aspect * (layout.maxStretch ?? CABINET_MAX_STRETCH),
+  );
   const cab: CabinetRect = { x: (width - cabW) / 2, y: height - cabH, w: cabW, h: cabH };
   const py = (fy: number) => cab.y + fy * cab.h;
 
@@ -183,7 +189,10 @@ export function computeCabinetGeometry(
     const top = fieldTop + TOP_GAP * s;
     const lastY = fieldBottom - BOTTOM_GAP * s;
     const free = rows > 1 ? (lastY - top) / (rows - 1) : s;
-    const rowGap = Math.min((layout.maxRowGap ?? MAX_ROW_GAP) * s, free);
+    // Following the sides: each row is half a pitch wider on each side, so the gap that keeps
+    // the rows parallel to the plate's edges is 0.5 / slope pitches.
+    const maxGap = layout.rowsFollowSides ? 0.5 / Math.abs(sideSlope) : MAX_ROW_GAP;
+    const rowGap = Math.min(maxGap * s, free);
     // Height the rows can't use is shared above and below, so the pyramid sits centred on
     // the plate instead of leaving all of it at the bottom.
     const spare = Math.max(0, lastY - top - (rows - 1) * rowGap);
@@ -215,6 +224,10 @@ export function computeCabinetGeometry(
   const spacing = lo;
   const { topY, rowGap } = layoutFor(spacing);
   const binHeight = Math.min(shelfHeight * 0.82, spacing * 2.1);
+  // Spread the bins over the shelf, but never more than 25 % wider than the pegs above them.
+  const binPitch = layout.binsFillShelf
+    ? Math.max(spacing, Math.min(spacing * 1.25, (shelfWidth * 0.97) / (rows + 1)))
+    : spacing;
 
   return {
     cabinet: cab,
@@ -240,7 +253,8 @@ export function computeCabinetGeometry(
       topY,
       binTop: shelfTop + (shelfHeight - binHeight) / 2,
       binHeight,
-      binWidth: spacing * 0.94,
+      binWidth: binPitch * 0.94,
+      binPitch,
     },
   };
 }
@@ -258,14 +272,14 @@ export function pegY(g: BoardGeometry, row: number): number {
 }
 
 export function binCenterX(g: BoardGeometry, bin: number): number {
-  return g.centerX + (bin - g.rows / 2) * g.spacing;
+  return g.centerX + (bin - g.rows / 2) * g.binPitch;
 }
 
 /** Bin under the point, or -1. Used for hover / tap tooltips. */
 export function binAt(g: BoardGeometry, x: number, y: number): number {
   if (y < g.binTop || y > g.binTop + g.binHeight) return -1;
   // `+ 0` turns Math.round's -0 (points just left of bin 0's centre) into 0.
-  const bin = Math.round((x - g.centerX) / g.spacing + g.rows / 2) + 0;
+  const bin = Math.round((x - g.centerX) / g.binPitch + g.rows / 2) + 0;
   if (bin < 0 || bin > g.rows) return -1;
   return Math.abs(x - binCenterX(g, bin)) <= g.binWidth / 2 ? bin : -1;
 }

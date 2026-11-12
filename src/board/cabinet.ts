@@ -4,6 +4,7 @@
  * (1016×1414, cropped to the guitar from `art/cabinet-guitar-source.webp`).
  */
 import cabinetUrl from '../assets/cabinet.webp';
+import minimalUrl from '../assets/cabinet-minimal.webp';
 import type { Skin } from '../core/storage';
 
 export interface CabinetLayout {
@@ -35,8 +36,15 @@ export interface CabinetLayout {
    * 'bottom' sits the pyramid on the shelf, for a pointed frame that is wider further down.
    */
   pyramidAlign?: 'center' | 'bottom';
-  /** Largest row gap in pitches (default 1.3); match it to the frame's slope so the rows follow its sides. */
-  maxRowGap?: number;
+  /**
+   * Rows run parallel to the plate's sides: the row gap is set from the sides' slope, so
+   * the pyramid keeps an even margin to the frame from top to bottom.
+   */
+  rowsFollowSides?: boolean;
+  /** Bins spread out to fill the shelf's width (their pitch may exceed the peg pitch a little). */
+  binsFillShelf?: boolean;
+  /** How much wider than its art the cabinet may be drawn (default 1.18). */
+  maxStretch?: number;
 }
 
 export const CABINET_LAYOUT: CabinetLayout = {
@@ -60,34 +68,37 @@ export const CABINET_LAYOUT: CabinetLayout = {
 export const CABINET_URL: string = cabinetUrl;
 
 /**
- * Second design, the classic look: a flat smoked-glass triangle with one thin neon edge
- * (orange to blue) and a glass tray for the bins. Measured on `art/cabinet-minimal.png`
- * (964×880, cropped from `art/cabinet-minimal-source.webp`). The flat art is drawn stretched
- * to 964×1300, so the pyramid gets the tall phone screen.
+ * Second design, the classic look: a black obsidian triangle in a mirror-chrome bevel with
+ * light inlaid in it, amber on the left and blue on the right, and a chrome-rimmed tray for
+ * the bins. Measured on `art/cabinet-minimal.png` (1024×1290, cropped from
+ * `art/cabinet-minimal-source.webp`). The pyramid sits on the tray and its row gap matches
+ * the sides' slope, so the rows run parallel to the bevel with an even margin.
  */
 export const MINIMAL_LAYOUT: CabinetLayout = {
-  aspect: 964 / 1300,
+  aspect: 1024 / 1290,
   field: {
-    top: 0.1136,
-    bottom: 0.8693,
-    leftTop: 0.4699,
-    rightTop: 0.5301,
-    leftBottom: 0.0581,
-    rightBottom: 0.9357,
-    corner: 4 / 1300,
-    topCorner: 30 / 1300,
+    top: 0.1163,
+    bottom: 0.8589,
+    leftTop: 0.4808,
+    rightTop: 0.521,
+    leftBottom: 0.1253,
+    rightBottom: 0.8767,
+    corner: 4 / 1290,
+    topCorner: 4 / 1290,
   },
-  channels: { top: 0.8557, bottom: 0.8693 },
-  shelf: { top: 0.883, bottom: 0.9432, left: 0.0643, right: 0.9357 },
+  channels: { top: 0.846, bottom: 0.8589 },
+  shelf: { top: 0.8775, bottom: 0.9411, left: 0.083, right: 0.916 },
   maxOverflow: 1,
   pyramidAlign: 'bottom',
-  maxRowGap: 1.22,
+  rowsFollowSides: true,
+  binsFillShelf: true,
+  // the bevelled frame must not be distorted
+  maxStretch: 1,
 };
 
-/** `url: null` = the cabinet is drawn in code (see glass.ts), not loaded as an image. */
-export const CABINETS: Record<Skin, { url: string | null; layout: CabinetLayout }> = {
+export const CABINETS: Record<Skin, { url: string; layout: CabinetLayout }> = {
   guitar: { url: cabinetUrl, layout: CABINET_LAYOUT },
-  minimal: { url: null, layout: MINIMAL_LAYOUT },
+  minimal: { url: minimalUrl, layout: MINIMAL_LAYOUT },
 };
 
 /** The art carries its own colour; code draws only the steel bin dividers. */
