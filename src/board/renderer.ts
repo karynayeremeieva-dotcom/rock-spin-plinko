@@ -32,6 +32,8 @@ import {
   binColor,
   binLabelSize,
   binSprites,
+  neonBinSprites,
+  neonPegSprite,
   glowSprite,
   pegSprite,
   type BinSpriteSet,
@@ -94,6 +96,9 @@ export class BoardRenderer {
   private cabinetLayer: HTMLCanvasElement | null = null;
   private skin: Skin = 'guitar';
   private cabinetLayout: CabinetLayout = CABINETS.guitar.layout;
+  /** Minimalist design: glowing pegs without strings, glass bins, coloured peg flashes. */
+  private neon = false;
+  private pegGlowB: HTMLCanvasElement | null = null;
   /** Peg index range per row of the play pyramid (strings run across it). */
   private pegRange: [number, number][] = [];
   private neonScheme: NeonScheme = 'cool';
@@ -212,6 +217,7 @@ export class BoardRenderer {
       if (this.destroyed || this.skin !== skin) return;
       this.cabinetImg = img;
       this.cabinetLayout = layout;
+      this.neon = skin === 'minimal';
       this.rebuild(false);
     };
     img.src = url;
@@ -258,8 +264,12 @@ export class BoardRenderer {
     this.geometry = g;
     const d = this.dpr;
 
-    this.pegImg = pegSprite(g.pegRadius * d);
-    this.pegGlowImg = glowSprite(g.pegRadius * 4 * d, BOARD_COLORS.pegGlow);
+    this.pegImg = this.neon ? neonPegSprite(g.pegRadius * d) : pegSprite(g.pegRadius * d);
+    this.pegGlowImg = glowSprite(
+      g.pegRadius * 4 * d,
+      this.neon ? 'rgba(255, 150, 60, 1)' : BOARD_COLORS.pegGlow,
+    );
+    this.pegGlowB = this.neon ? glowSprite(g.pegRadius * 4 * d, 'rgba(80, 150, 255, 1)') : null;
     this.ballImg = ballSprite(g.ballRadius * d);
     // Narrow bins (phones, many rows) switch to a condensed face, so full labels like 0.2 and
     // 1000 keep digits big enough to read.
@@ -269,8 +279,9 @@ export class BoardRenderer {
       binFont = CONDENSED_FONT;
       labelSize = binLabelSize(this.table, g.binWidth * d, g.binHeight * d, binFont);
     }
+    const makeBin = this.neon ? neonBinSprites : binSprites;
     this.bins = this.table.map((m, k) =>
-      binSprites(
+      makeBin(
         g.binWidth * d,
         g.binHeight * d,
         binColor(Math.abs(k - g.rows / 2) / (g.rows / 2)),
@@ -345,7 +356,7 @@ export class BoardRenderer {
 
   private pluck(row: number, peg: number): void {
     const g = this.geometry;
-    if (!g || this.reducedMotion || row >= this.stringAmp.length) return;
+    if (!g || this.neon || this.reducedMotion || row >= this.stringAmp.length) return;
     const max = g.rowGap * 0.2;
     this.stringAmp[row] = Math.min(max, (this.stringAmp[row] ?? 0) + g.rowGap * 0.11);
     this.stringHitX[row] = pegX(g, row, peg);
@@ -385,7 +396,7 @@ export class BoardRenderer {
       ctx.setTransform(d, 0, 0, d, 0, 0);
     }
 
-    this.drawStrings(g, transitioning ? sinceTransition : Infinity);
+    if (!this.neon) this.drawStrings(g, transitioning ? sinceTransition : Infinity);
 
     // Pegs.
     if (transitioning) {
@@ -401,8 +412,9 @@ export class BoardRenderer {
     }
 
     // Peg flashes: off — the plucked string already marks the hit, a glow blob looked dirty.
-    if (SHOW_PEG_FLASH && this.pegGlowImg && this.pegFlash.size > 0) {
-      const glow = this.pegGlowImg;
+    if ((SHOW_PEG_FLASH || this.neon) && this.pegGlowImg && this.pegFlash.size > 0) {
+      const warm = this.pegGlowImg;
+      const cool = this.pegGlowB ?? warm;
       const size = g.pegRadius * 8;
       ctx.globalCompositeOperation = 'lighter';
       for (const [key, t] of this.pegFlash) {
@@ -415,6 +427,8 @@ export class BoardRenderer {
         const x = pegX(g, row, key % 32);
         const y = pegY(g, row);
         ctx.globalAlpha = 1 - age / PEG_FLASH;
+        // Neon: the flash takes the colour of its side of the triangle.
+        const glow = x < g.centerX ? warm : cool;
         ctx.drawImage(glow, x - size / 2, y - size / 2, size, size);
       }
       ctx.globalAlpha = 1;
@@ -582,7 +596,7 @@ export class BoardRenderer {
 
     const w = Math.max(1.3, s * 0.1);
     if (CABINET_HAS_NEON) {
-      drawChannels();
+      if (!this.neon) drawChannels();
       return;
     }
     tube(outer, colorB, w * 0.45, w * 0.95);

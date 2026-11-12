@@ -256,3 +256,80 @@ export function binSprites(
   };
   return { normal: draw(false), lit: draw(true), pad };
 }
+
+// ---------- neon style (the minimalist glass triangle) ----------
+
+/** Neon peg: a small white-hot core inside a soft cool halo. Sprite size = 2 × radius × 2.2. */
+export const NEON_PEG_SCALE = 2.2;
+
+export function neonPegSprite(radius: number): HTMLCanvasElement {
+  const R = Math.ceil(radius * NEON_PEG_SCALE);
+  const { canvas, ctx } = makeCanvas(R * 2, R * 2);
+  const halo = ctx.createRadialGradient(R, R, radius * 0.3, R, R, R);
+  halo.addColorStop(0, 'rgba(220, 230, 255, 0.55)');
+  halo.addColorStop(0.45, 'rgba(170, 190, 255, 0.14)');
+  halo.addColorStop(1, 'rgba(150, 170, 255, 0)');
+  ctx.fillStyle = halo;
+  ctx.fillRect(0, 0, R * 2, R * 2);
+  const core = ctx.createRadialGradient(R, R, 0, R, R, radius * 0.62);
+  core.addColorStop(0, '#ffffff');
+  core.addColorStop(0.7, '#eef2ff');
+  core.addColorStop(1, 'rgba(230, 236, 255, 0.9)');
+  ctx.fillStyle = core;
+  ctx.beginPath();
+  ctx.arc(R, R, radius * 0.62, 0, Math.PI * 2);
+  ctx.fill();
+  return canvas;
+}
+
+/**
+ * Neon bin: dark glass with a thin outline and glowing digits in the bin's colour.
+ * The lit version fills with light and turns the digits white. Sizes in device pixels.
+ */
+export function neonBinSprites(
+  width: number,
+  height: number,
+  color: Rgb,
+  label: number,
+  fontFamily: string,
+  fontSize?: number,
+): BinSpriteSet {
+  const pad = Math.ceil(height * 0.5);
+  const draw = (lit: boolean) => {
+    const { canvas, ctx } = makeCanvas(width + pad * 2, height + pad * 2);
+    const x = pad;
+    const y = pad;
+    const r = Math.min(width, height) * 0.2;
+    const line = Math.max(1, height * 0.045);
+
+    ctx.shadowColor = rgb(color, lit ? 0.95 : 0.55);
+    ctx.shadowBlur = pad * (lit ? 0.9 : 0.35);
+    const body = ctx.createLinearGradient(0, y, 0, y + height);
+    if (lit) {
+      body.addColorStop(0, rgb(shade(color, 0.25), 0.95));
+      body.addColorStop(1, rgb(color, 0.85));
+    } else {
+      body.addColorStop(0, rgb(color, 0.2));
+      body.addColorStop(1, 'rgba(8, 9, 14, 0.85)');
+    }
+    ctx.fillStyle = body;
+    roundRect(ctx, x + line / 2, y + line / 2, width - line, height - line, r);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = rgb(shade(color, 0.15), lit ? 1 : 0.9);
+    ctx.lineWidth = line;
+    ctx.stroke();
+
+    const size = fontSize ?? binLabelSize([label], width, height, fontFamily);
+    ctx.font = `800 ${size}px ${fontFamily}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = rgb(color, 1);
+    ctx.shadowBlur = lit ? 0 : size * 0.45;
+    ctx.fillStyle = lit ? rgb(shade(color, -0.8)) : rgb(shade(color, 0.55));
+    ctx.fillText(binLabel(label), x + width / 2, y + height * 0.53);
+    ctx.shadowBlur = 0;
+    return canvas;
+  };
+  return { normal: draw(false), lit: draw(true), pad };
+}

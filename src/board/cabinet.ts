@@ -31,6 +31,13 @@ export interface CabinetLayout {
   shelf: { top: number; bottom: number; left: number; right: number };
   /** How far past the canvas width the art may go (default 1.12: the frame may be cropped). */
   maxOverflow?: number;
+  /**
+   * Where spare height goes. 'center' (default) splits it above and below the pyramid;
+   * 'bottom' sits the pyramid on the shelf, for a pointed frame that is wider further down.
+   */
+  pyramidAlign?: 'center' | 'bottom';
+  /** Largest row gap in pitches (default 1.3); match it to the frame's slope so the rows follow its sides. */
+  maxRowGap?: number;
 }
 
 export const CABINET_LAYOUT: CabinetLayout = {
@@ -74,6 +81,8 @@ export const MINIMAL_LAYOUT: CabinetLayout = {
   channels: { top: 0.8557, bottom: 0.8693 },
   shelf: { top: 0.883, bottom: 0.9432, left: 0.0643, right: 0.9357 },
   maxOverflow: 1,
+  pyramidAlign: 'bottom',
+  maxRowGap: 1.22,
 };
 
 export const CABINETS: Record<Skin, { url: string; layout: CabinetLayout }> = {

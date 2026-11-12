@@ -183,12 +183,15 @@ export function computeCabinetGeometry(
     const top = fieldTop + TOP_GAP * s;
     const lastY = fieldBottom - BOTTOM_GAP * s;
     const free = rows > 1 ? (lastY - top) / (rows - 1) : s;
-    const rowGap = Math.min(MAX_ROW_GAP * s, free);
+    const rowGap = Math.min((layout.maxRowGap ?? MAX_ROW_GAP) * s, free);
     // Height the rows can't use is shared above and below, so the pyramid sits centred on
     // the plate instead of leaving all of it at the bottom.
     const spare = Math.max(0, lastY - top - (rows - 1) * rowGap);
     const gaps = (TOP_GAP + BOTTOM_GAP) * s + spare; // room above row 0 plus below the last row
-    const topY = fieldTop + Math.min(TOP_GAP * s + spare, Math.max(TOP_GAP * s, gaps / 2));
+    const topY =
+      layout.pyramidAlign === 'bottom'
+        ? fieldTop + TOP_GAP * s + spare
+        : fieldTop + Math.min(TOP_GAP * s + spare, Math.max(TOP_GAP * s, gaps / 2));
     return { topY, rowGap, free };
   };
   // The plate's corners are rounded, so every row is checked against its edges.
