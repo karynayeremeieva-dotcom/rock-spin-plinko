@@ -11,7 +11,7 @@ interface TelegramWebApp {
   initData: string;
   platform: string;
   version: string;
-  initDataUnsafe?: { user?: { language_code?: string } };
+  initDataUnsafe?: { user?: { id?: number; language_code?: string } };
   isVersionAtLeast(version: string): boolean;
   ready(): void;
   expand(): void;
@@ -131,6 +131,35 @@ export function showBackButton(handler: () => void): () => void {
     button.offClick(handler);
     button.hide();
   };
+}
+
+/**
+ * Telegram user id, or null outside Telegram. Read at start-up, before the async SDK has
+ * loaded, from the launch parameters Telegram puts in the URL hash (tgWebAppData), and
+ * kept for the session so a reload inside the Mini App finds it again.
+ */
+export function telegramUserId(): string | null {
+  const fromSdk = window.Telegram?.WebApp?.initDataUnsafe?.user?.id;
+  let id = typeof fromSdk === 'number' ? String(fromSdk) : null;
+  if (!id) {
+    try {
+      const data = new URLSearchParams(window.location.hash.slice(1)).get('tgWebAppData');
+      const user = data ? new URLSearchParams(data).get('user') : null;
+      const parsed: unknown = user ? JSON.parse(user) : null;
+      if (typeof parsed === 'object' && parsed !== null && 'id' in parsed) {
+        id = String((parsed as { id: unknown }).id);
+      }
+    } catch {
+      id = null;
+    }
+  }
+  try {
+    if (id && /^\d+$/.test(id)) sessionStorage.setItem('rockspin.tgUser', id);
+    else id = sessionStorage.getItem('rockspin.tgUser');
+  } catch {
+    // no session storage: fine, the id from the URL is enough for this load
+  }
+  return id && /^\d+$/.test(id) ? id : null;
 }
 
 export function telegramLanguage(): string | undefined {

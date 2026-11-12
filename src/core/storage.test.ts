@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { calcPayout } from './money';
 import { PlinkoGame, type PersistedGame } from './game';
-import { DEFAULT_PREFS, loadSave, STORAGE_KEY, writeSave, type Prefs } from './storage';
+import { DEFAULT_PREFS, loadSave, saveKey, STORAGE_KEY, writeSave, type Prefs } from './storage';
 import type { PlayFn } from '../api/plinko';
 
 class MemoryStorage implements Storage {
@@ -123,5 +123,67 @@ describe('storage', () => {
     expect(() =>
       writeSave(storage, { game: game.toPersisted(), prefs: DEFAULT_PREFS }),
     ).not.toThrow();
+  });
+});
+
+describe('save key per Telegram user', () => {
+  const save = (balance: number) =>
+    JSON.stringify({ game: { balance, history: [] }, prefs: DEFAULT_PREFS });
+
+  it('adds the Telegram user id to the key', () => {
+    expect(saveKey(null)).toBe(STORAGE_KEY);
+    expect(saveKey('42')).toBe(`${STORAGE_KEY}.tg42`);
+  });
+
+  it('moves an old save to the first Telegram user, once', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(STORAGE_KEY, save(77_700));
+    expect(loadSave(storage, saveKey('1')).game.balance).toBe(77_700);
+    expect(storage.getItem(STORAGE_KEY)).toBeNull();
+    // A second account on the same phone starts fresh instead of sharing the balance.
+    expect(loadSave(storage, saveKey('2')).game.balance).toBeUndefined();
+    expect(loadSave(storage, saveKey('1')).game.balance).toBe(77_700);
+  });
+
+  it('never overwrites a user save that already exists', () => {
+    const storage = new MemoryStorage();
+    storage.setItem(saveKey('1'), save(50_000));
+    storage.setItem(STORAGE_KEY, save(99_900));
+    expect(loadSave(storage, saveKey('1')).game.balance).toBe(50_000);
+  });
+});
+
+describe('saved records must add up', () => {
+  const entry = {
+    id: 'a',
+    time: 1,
+    bet: 1_000,
+    rows: 8,
+    risk: 'low' as const,
+    bin: 0,
+    multiplier: 5.6,
+    payout: calcPayout(1_000, 5.6),
+  };
+  const load = (game: object) => {
+    const storage = new MemoryStorage();
+    storage.setItem(STORAGE_KEY, JSON.stringify({ game, prefs: DEFAULT_PREFS }));
+    return loadSave(storage).game;
+  };
+
+  it('drops history entries that were edited or are impossible', () => {
+    const { history } = load({
+      history: [
+        entry,
+        { ...entry, id: 'b', payout: 1_000_000 },
+        { ...entry, id: 'c', bin: 9 },
+        { ...entry, id: 'd', multiplier: -2 },
+      ],
+    });
+    expect(history?.map((e) => e.id)).toEqual(['a']);
+  });
+
+  it('ignores a saved bet above the maximum', () => {
+    expect(load({ bet: 100_001 }).bet).toBeUndefined();
+    expect(load({ bet: 100_000 }).bet).toBe(100_000);
   });
 });

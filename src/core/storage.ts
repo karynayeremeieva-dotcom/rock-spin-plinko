@@ -3,10 +3,20 @@
  * hand-edited save falls back to defaults instead of breaking the game.
  */
 import { normalizeAutoConfig, type AutoConfig } from './auto';
+import { MAX_BET } from './bet';
+import { calcPayout } from './money';
 import { HISTORY_LIMIT, type HistoryEntry, type PersistedGame } from './game';
 import { isRisk, isRows } from './multipliers';
 
 export const STORAGE_KEY = 'rockspin.plinko.v1';
+
+/**
+ * Save key. Inside Telegram it carries the user id, so two accounts on one phone
+ * (Telegram's web view shares storage between them) never share a balance.
+ */
+export function saveKey(telegramUserId: string | null): string {
+  return telegramUserId ? `${STORAGE_KEY}.tg${telegramUserId}` : STORAGE_KEY;
+}
 
 export type Lang = 'ru' | 'en';
 
@@ -51,12 +61,13 @@ export function safeStorage(): Storage | null {
   }
 }
 
-export function loadSave(storage: Storage | null): SaveData {
+export function loadSave(storage: Storage | null, key = STORAGE_KEY): SaveData {
   const empty: SaveData = { game: {}, prefs: DEFAULT_PREFS };
   if (!storage) return empty;
+  migrateLegacySave(storage, key);
   let raw: unknown;
   try {
-    raw = JSON.parse(storage.getItem(STORAGE_KEY) ?? 'null');
+    raw = JSON.parse(storage.getItem(key) ?? 'null');
   } catch {
     return empty;
   }
@@ -64,12 +75,33 @@ export function loadSave(storage: Storage | null): SaveData {
   return { game: parseGame(raw.game), prefs: parsePrefs(raw.prefs) };
 }
 
-export function writeSave(storage: Storage | null, data: { game: PersistedGame; prefs: Prefs }) {
+export function writeSave(
+  storage: Storage | null,
+  data: { game: PersistedGame; prefs: Prefs },
+  key = STORAGE_KEY,
+) {
   if (!storage) return;
   try {
-    storage.setItem(STORAGE_KEY, JSON.stringify(data));
+    storage.setItem(key, JSON.stringify(data));
   } catch {
     // Quota exceeded or storage revoked: the game keeps working in memory.
+  }
+}
+
+/**
+ * Saves made before the key carried the Telegram user id move to the user's own key on
+ * their first visit, once: the first account to open the game keeps its progress, any
+ * later account starts fresh.
+ */
+function migrateLegacySave(storage: Storage, key: string) {
+  if (key === STORAGE_KEY) return;
+  try {
+    const legacy = storage.getItem(STORAGE_KEY);
+    if (legacy === null) return;
+    if (storage.getItem(key) === null) storage.setItem(key, legacy);
+    storage.removeItem(STORAGE_KEY);
+  } catch {
+    // Storage revoked mid-way: the game simply starts from what it could read.
   }
 }
 
@@ -77,7 +109,7 @@ function parseGame(value: unknown): Partial<PersistedGame> {
   if (!isObject(value)) return {};
   const out: Partial<PersistedGame> = {};
   if (isCents(value.balance)) out.balance = value.balance;
-  if (isCents(value.bet)) out.bet = value.bet;
+  if (isCents(value.bet) && value.bet <= MAX_BET) out.bet = value.bet;
   if (isRows(value.rows)) out.rows = value.rows;
   if (isRisk(value.risk)) out.risk = value.risk;
   if (Array.isArray(value.history)) {
@@ -114,8 +146,14 @@ function isHistoryEntry(value: unknown): value is HistoryEntry {
     isRows(value.rows) &&
     isRisk(value.risk) &&
     Number.isInteger(value.bin) &&
+    (value.bin as number) >= 0 &&
+    (value.bin as number) <= value.rows &&
     typeof value.multiplier === 'number' &&
-    isCents(value.payout)
+    Number.isFinite(value.multiplier) &&
+    value.multiplier > 0 &&
+    isCents(value.payout) &&
+    // A record must add up: an edited or corrupted entry is dropped, not shown.
+    value.payout === calcPayout(value.bet, value.multiplier)
   );
 }
 

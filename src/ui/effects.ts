@@ -15,12 +15,17 @@ import {
 export const BIG_WIN = 10;
 
 /** Saves shortly after every change, and immediately when the page is hidden or closed. */
-export function usePersistence(game: PlinkoGame, prefs: Prefs, storage: Storage | null): void {
+export function usePersistence(
+  game: PlinkoGame,
+  prefs: Prefs,
+  storage: Storage | null,
+  key?: string,
+): void {
   useEffect(() => {
     let timer = 0;
     const save = () => {
       window.clearTimeout(timer);
-      writeSave(storage, { game: game.toPersisted(), prefs });
+      writeSave(storage, { game: game.toPersisted(), prefs }, key);
     };
     const schedule = () => {
       window.clearTimeout(timer);
@@ -37,7 +42,7 @@ export function usePersistence(game: PlinkoGame, prefs: Prefs, storage: Storage 
       window.removeEventListener('pagehide', save);
       document.removeEventListener('visibilitychange', onHide);
     };
-  }, [game, prefs, storage]);
+  }, [game, prefs, storage, key]);
 }
 
 /** Telegram init, haptics and close confirmation while balls fly or auto runs. */

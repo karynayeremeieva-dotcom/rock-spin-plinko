@@ -6,6 +6,7 @@ import {
   setClosingConfirmation,
   showBackButton,
   telegramLanguage,
+  telegramUserId,
 } from './telegram';
 
 /** Minimal fake of Telegram.WebApp that records every call. */
@@ -152,5 +153,32 @@ describe('telegram integration', () => {
     expect(app.BackButton.hide).toHaveBeenCalledOnce();
 
     expect(telegramLanguage()).toBe('ru');
+  });
+});
+
+describe('telegramUserId', () => {
+  afterEach(() => {
+    delete (globalThis as { window?: unknown }).window;
+  });
+
+  it('reads the user id from the launch parameters before the SDK loads', () => {
+    const data = new URLSearchParams({ user: JSON.stringify({ id: 4242, first_name: 'K' }) });
+    (globalThis as { window?: unknown }).window = {
+      location: { hash: `#${new URLSearchParams({ tgWebAppData: data.toString() }).toString()}` },
+    };
+    expect(telegramUserId()).toBe('4242');
+  });
+
+  it('prefers the SDK when it is there', () => {
+    (globalThis as { window?: unknown }).window = {
+      location: { hash: '' },
+      Telegram: { WebApp: { initDataUnsafe: { user: { id: 7 } } } },
+    };
+    expect(telegramUserId()).toBe('7');
+  });
+
+  it('is null in a plain browser', () => {
+    (globalThis as { window?: unknown }).window = { location: { hash: '' } };
+    expect(telegramUserId()).toBeNull();
   });
 });

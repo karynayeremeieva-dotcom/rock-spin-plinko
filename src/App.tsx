@@ -2,10 +2,11 @@ import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react
 import { play } from './api/plinko';
 import { SoundEngine } from './audio/sound';
 import { PlinkoGame } from './core/game';
-import { isSkin, loadSave, safeStorage, type Prefs } from './core/storage';
+import { isSkin, loadSave, safeStorage, saveKey, type Prefs } from './core/storage';
 import { useI18n } from './i18n/context';
 import { detectLang } from './i18n/dictionaries';
 import { I18nProvider } from './i18n/i18n';
+import { telegramUserId } from './platform/telegram';
 import { AppContext, useApp, type AppServices } from './ui/app-context';
 import { BetPanel } from './ui/BetPanel';
 import { BigWin } from './ui/BigWin';
@@ -25,7 +26,8 @@ const URL_SKIN = params.get('skin');
 
 export function App() {
   const [storage] = useState(safeStorage);
-  const [boot] = useState(() => loadSave(storage));
+  const [key] = useState(() => saveKey(telegramUserId()));
+  const [boot] = useState(() => loadSave(storage, key));
   const [game] = useState(() => new PlinkoGame({ play }, boot.game));
   const [sound] = useState(() => new SoundEngine());
   const [prefs, setPrefs] = useState<Prefs>(() =>
@@ -49,7 +51,7 @@ export function App() {
     // Dev builds only: lets you poke the engine from the console. Stripped from production.
     if (import.meta.env.DEV) (window as { __plinko?: PlinkoGame }).__plinko = game;
   }, [game]);
-  usePersistence(game, prefs, storage);
+  usePersistence(game, prefs, storage, key);
   useTelegram(game);
   useGameSounds(game, sound, prefs.sound);
 
