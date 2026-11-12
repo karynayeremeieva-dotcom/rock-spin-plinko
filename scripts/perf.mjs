@@ -10,12 +10,13 @@
  * Phone profile: 390×844 @2x, CPU throttled 4× (DevTools "4× slowdown").
  */
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import puppeteer from 'puppeteer-core';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PORT = 4173;
 const URL_ = `http://localhost:${PORT}/`;
 const CHROME =
@@ -33,7 +34,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function run(cmd, args) {
   return new Promise((resolve, reject) => {
-    const p = spawn(cmd, args, { cwd: ROOT, stdio: 'inherit' });
+    const p = spawn(cmd, args, {
+      cwd: ROOT,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
     p.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} exited ${code}`))));
   });
 }
@@ -42,6 +47,7 @@ async function startPreview() {
   const p = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
     cwd: ROOT,
     stdio: ['ignore', 'pipe', 'inherit'],
+    shell: process.platform === 'win32',
   });
   await new Promise((resolve) =>
     p.stdout.on('data', (d) => String(d).includes('localhost') && resolve()),

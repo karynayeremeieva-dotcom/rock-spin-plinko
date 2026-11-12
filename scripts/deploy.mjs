@@ -11,13 +11,16 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
+// On Windows npm/npx are .cmd files, which Node only runs through a shell.
+const shell = process.platform === 'win32';
 const run = (cmd, args, cwd = ROOT) =>
-  execFileSync(cmd, args, { cwd, stdio: ['ignore', 'pipe', 'inherit'] })
+  execFileSync(cmd, args, { cwd, shell, stdio: ['ignore', 'pipe', 'inherit'] })
     .toString()
     .trim();
-const sh = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, stdio: 'inherit' });
+const sh = (cmd, args, cwd) => execFileSync(cmd, args, { cwd, shell, stdio: 'inherit' });
 
 const remote = run('git', ['remote', 'get-url', 'origin']);
 const sha = run('git', ['rev-parse', '--short', 'HEAD']);
@@ -27,7 +30,8 @@ const tree = mkdtempSync(join(tmpdir(), 'plinko-deploy-'));
 
 try {
   sh('git', ['worktree', 'add', '--detach', tree, 'HEAD'], ROOT);
-  symlinkSync(join(ROOT, 'node_modules'), join(tree, 'node_modules'));
+  // 'junction' works on Windows without admin rights; other systems ignore the type.
+  symlinkSync(join(ROOT, 'node_modules'), join(tree, 'node_modules'), 'junction');
   sh('npm', ['run', 'check'], tree);
   sh('npx', ['vite', 'build'], tree);
 

@@ -12,9 +12,10 @@
  */
 /* global document, innerWidth, innerHeight, requestAnimationFrame -- page code inside page.evaluate() */
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import puppeteer from 'puppeteer-core';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const PORT = 4174;
 const CHROME =
   process.env.CHROME_PATH ?? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
@@ -26,7 +27,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 function run(cmd, args) {
   return new Promise((resolve, reject) => {
-    const p = spawn(cmd, args, { cwd: ROOT, stdio: 'inherit' });
+    const p = spawn(cmd, args, {
+      cwd: ROOT,
+      stdio: 'inherit',
+      shell: process.platform === 'win32',
+    });
     p.on('exit', (code) => (code === 0 ? resolve() : reject(new Error(`${cmd} exited ${code}`))));
   });
 }
@@ -35,6 +40,7 @@ async function startPreview() {
   const p = spawn('npx', ['vite', 'preview', '--port', String(PORT), '--strictPort'], {
     cwd: ROOT,
     stdio: ['ignore', 'pipe', 'inherit'],
+    shell: process.platform === 'win32',
   });
   await new Promise((resolve) =>
     p.stdout.on('data', (d) => String(d).includes('localhost') && resolve()),

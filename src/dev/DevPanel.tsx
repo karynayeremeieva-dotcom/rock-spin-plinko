@@ -161,7 +161,8 @@ function DevSheet({ onClose }: { onClose: () => void }) {
     a.href = url;
     a.download = 'multipliers.json';
     a.click();
-    URL.revokeObjectURL(url);
+    // Safari may still be reading the blob right after click(): release it a bit later.
+    setTimeout(() => URL.revokeObjectURL(url), 1_000);
   };
 
   const runSimulation = async () => {
