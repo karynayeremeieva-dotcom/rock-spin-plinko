@@ -64,7 +64,11 @@ export function checkBeforeLaunch(
   bet: Cents,
 ): AutoStopReason | null {
   if (config.rounds > 0 && progress.launched >= config.rounds) return 'rounds_done';
-  return checkMoneyLimits(config, progress) ?? (bet > balance ? 'insufficient_balance' : null);
+  const limit = checkMoneyLimits(config, progress);
+  if (limit) return limit;
+  // The next stake must fit under the loss limit too, so the loss never overshoots it.
+  if (config.stopOnLoss !== null && -progress.profit + bet > config.stopOnLoss) return 'loss';
+  return bet > balance ? 'insufficient_balance' : null;
 }
 
 /** Checked when a ball of this session lands. */

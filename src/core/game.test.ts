@@ -192,7 +192,9 @@ describe('auto mode', () => {
     game.startAuto(auto({ stopOnLoss: 2_000 }));
     await vi.advanceTimersByTimeAsync(10_000);
     expect(game.getState().auto).toMatchObject({ running: false, stopReason: 'loss' });
-    expect(game.getState().auto?.progress).toEqual({ launched: 4, profit: -2_000 });
+    // 3 × (−10 + 5) = −15; a fourth 10 RC stake could end at −25, past the 20 RC limit.
+    expect(game.getState().auto?.progress).toEqual({ launched: 3, profit: -1_500 });
+    expect(-(game.getState().auto?.progress.profit ?? 0)).toBeLessThanOrEqual(2_000);
   });
 
   it('stops on a single win ≥ Z×', async () => {
@@ -401,5 +403,33 @@ describe('fallback landing', () => {
     game.land(r.ball.id);
     await wait(60);
     expect(game.getState().balance).toBe(INITIAL_BALANCE + 200);
+  });
+});
+
+describe('auto mode: the last round', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it('does not report "all rounds done" when the last request fails', async () => {
+    let n = 0;
+    const { play, getTable } = scripted();
+    const game = new PlinkoGame({
+      play: (req) => (++n === 3 ? Promise.reject(new Error('offline')) : play(req)),
+      getTable,
+    });
+    game.on((e) => e.type === 'ball' && game.land(e.ball.id));
+    game.startAuto({
+      rounds: 3,
+      intervalMs: 200,
+      stopOnProfit: null,
+      stopOnLoss: null,
+      stopOnMultiplier: null,
+    });
+    await vi.advanceTimersByTimeAsync(2_000);
+    expect(game.getState().auto).toMatchObject({
+      running: false,
+      stopReason: 'error',
+      progress: { launched: 2 },
+    });
   });
 });

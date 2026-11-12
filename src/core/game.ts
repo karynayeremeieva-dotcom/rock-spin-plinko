@@ -412,6 +412,12 @@ export class PlinkoGame {
       this.state.balance,
       this.state.bet,
     );
+    // The last ball is only "done" once the server has answered: if that request fails,
+    // the session stops with an error instead of claiming every round was played.
+    if (reason === 'rounds_done' && this.state.pending > 0) {
+      this.scheduleAuto(50);
+      return;
+    }
     if (reason) {
       this.stopAuto(reason);
       return;
@@ -426,7 +432,8 @@ export class PlinkoGame {
       void this.launch(auto.session);
       const after = this.state.auto;
       if (after && roundsLeft(after.config, after.progress) === 0) {
-        this.stopAuto('rounds_done');
+        // Re-check soon: stops as 'rounds_done' once the last answer is in.
+        this.scheduleAuto(50);
         return;
       }
     }

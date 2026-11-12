@@ -34,8 +34,15 @@ describe('checkBeforeLaunch', () => {
 
   it('stops when loss reaches Y', () => {
     const config = { ...base, stopOnLoss: 2_000 };
-    expect(checkBeforeLaunch(config, { launched: 1, profit: -1_999 }, 1_000, 100)).toBeNull();
     expect(checkBeforeLaunch(config, { launched: 1, profit: -2_000 }, 1_000, 100)).toBe('loss');
+  });
+
+  it('never lets the next stake push the loss past Y', () => {
+    const config = { ...base, stopOnLoss: 2_000 };
+    // 19.00 lost + a 1.00 stake = exactly the limit: still allowed
+    expect(checkBeforeLaunch(config, { launched: 1, profit: -1_900 }, 1_000, 100)).toBeNull();
+    // 19.01 lost + 1.00 would end at 20.01: stop now
+    expect(checkBeforeLaunch(config, { launched: 1, profit: -1_901 }, 1_000, 100)).toBe('loss');
   });
 
   it('stops when the balance cannot cover the bet', () => {
