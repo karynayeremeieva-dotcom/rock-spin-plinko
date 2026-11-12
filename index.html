@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0b0b0d" />
+    <link rel="icon" type="image/png" href="./favicon.png" />
+    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <title>Rock Spin · Plinko</title>
+    <!-- Telegram Mini App SDK. Async so it never delays the first paint outside Telegram. -->
+    <script id="tg-sdk" src="https://telegram.org/js/telegram-web-app.js" async></script>
+    <!-- Skeleton styles are inline so the placeholder paints before any JS or CSS loads. -->
+    <style>
+      html {
+        height: 100%;
+        background: #0b0b0d;
+      }
+      body {
+        margin: 0;
+        height: 100%;
+      }
+      .sk {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        height: 100dvh;
+        max-width: 480px;
+        margin: 0 auto;
+        padding: calc(env(safe-area-inset-top) + 8px) 10px calc(env(safe-area-inset-bottom) + 8px);
+        box-sizing: border-box;
+      }
+      .sk__bar,
+      .sk__panel,
+      .sk__dot {
+        border-radius: 12px;
+        background: linear-gradient(90deg, #17161a 0%, #24212a 50%, #17161a 100%) 0 0 / 200% 100%;
+        animation: sk 1.2s linear infinite;
+      }
+      .sk__top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 44px;
+      }
+      .sk__bar--brand {
+        width: 140px;
+        height: 32px;
+      }
+      .sk__bar--balance {
+        width: 120px;
+        height: 40px;
+      }
+      .sk__board {
+        flex: 1;
+        display: grid;
+        place-items: center;
+      }
+      .sk__tri {
+        width: 78%;
+        aspect-ratio: 1.1;
+        clip-path: polygon(50% 0, 100% 100%, 0 100%);
+        background: radial-gradient(circle, #2a272e 1.6px, transparent 2px) 0 0 / 18px 17px;
+        opacity: 0.7;
+      }
+      .sk__panel {
+        height: 200px;
+        border-radius: 16px;
+      }
+      @keyframes sk {
+        to {
+          background-position: -200% 0;
+        }
+      }
+      @media (min-width: 1024px) {
+        .sk {
+          max-width: 1280px;
+          display: grid;
+          grid-template-columns: 340px 1fr;
+          grid-template-rows: auto 1fr;
+          padding: 16px 24px 24px;
+          gap: 16px 24px;
+        }
+        .sk__top {
+          grid-column: 1 / -1;
+        }
+        .sk__panel {
+          grid-column: 1;
+          grid-row: 2;
+          height: 360px;
+        }
+        .sk__board {
+          grid-column: 2;
+          grid-row: 2;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .sk__bar,
+        .sk__panel {
+          animation: none;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="./assets/index-DKtUWNsD.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-BVNzZAPY.css">
+  </head>
+  <body>
+    <div id="root">
+      <div class="sk" aria-busy="true" aria-label="Loading">
+        <div class="sk__top">
+          <div class="sk__bar sk__bar--brand"></div>
+          <div class="sk__bar sk__bar--balance"></div>
+        </div>
+        <div class="sk__board"><div class="sk__tri"></div></div>
+        <div class="sk__panel"></div>
+      </div>
+    </div>
+  </body>
+</html>
