@@ -1,12 +1,12 @@
 # Rock Spin · Plinko
 
-[![CI](https://github.com/yeremeievahr-hue/rock-spin-plinko/actions/workflows/ci.yml/badge.svg)](https://github.com/yeremeievahr-hue/rock-spin-plinko/actions/workflows/ci.yml)
+[![CI](https://github.com/morch123/rock-spin-plinko/actions/workflows/ci.yml/badge.svg)](https://github.com/morch123/rock-spin-plinko/actions/workflows/ci.yml)
 
 Plinko для Telegram Mini App в стиле рок-клуба. Только фронтенд: результат каждого шарика считает заглушка сервера `src/api/plinko.ts`, демо-баланс 1 000 RC.
 
 | | |
 |---|---|
-| Игра | https://yeremeievahr-hue.github.io/rock-spin-plinko/ |
+| Игра | https://morch123.github.io/rock-spin-plinko/ |
 | В Telegram | [@testagent1245363bot](https://t.me/testagent1245363bot) → «Открыть приложение» |
 | Второй дизайн | та же ссылка с `?skin=minimal` или «Меню → Дизайн» |
 | Панель коэффициентов | та же ссылка с `?dev=1` |
