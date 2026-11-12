@@ -70,7 +70,8 @@ export const CABINET_URL: string = cabinetUrl;
 /**
  * Second design, the classic look: a black obsidian triangle in a mirror-chrome bevel with
  * light inlaid in it, amber on the left and blue on the right, and a chrome-rimmed tray for
- * the bins. Measured on `art/cabinet-minimal.png` (1024×1290, cropped from
+ * the bins. The playfield runs up to the inner edge of the lit bevel (the dark inner facet is
+ * part of the plate). Measured on `art/cabinet-minimal.png` (1024×1290, cropped from
  * `art/cabinet-minimal-source.webp`). The pyramid sits on the tray and its row gap matches
  * the sides' slope, so the rows run parallel to the bevel with an even margin.
  */
@@ -78,15 +79,15 @@ export const MINIMAL_LAYOUT: CabinetLayout = {
   aspect: 1024 / 1290,
   field: {
     top: 0.1163,
-    bottom: 0.8589,
-    leftTop: 0.4808,
-    rightTop: 0.521,
-    leftBottom: 0.1253,
-    rightBottom: 0.8767,
+    bottom: 0.8574,
+    leftTop: 0.4828,
+    rightTop: 0.5192,
+    leftBottom: 0.0723,
+    rightBottom: 0.9287,
     corner: 4 / 1290,
     topCorner: 4 / 1290,
   },
-  channels: { top: 0.846, bottom: 0.8589 },
+  channels: { top: 0.845, bottom: 0.8574 },
   shelf: { top: 0.8775, bottom: 0.9411, left: 0.083, right: 0.916 },
   maxOverflow: 1,
   pyramidAlign: 'bottom',
