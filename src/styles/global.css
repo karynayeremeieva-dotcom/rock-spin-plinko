@@ -166,6 +166,10 @@ button:disabled {
   justify-content: space-between;
   gap: 12px;
   min-height: 44px;
+  /* The glass blur makes the bar its own layer; lift it above the board so the payout
+     pill that drops out of it is never hidden behind the cabinet art. */
+  position: relative;
+  z-index: 5;
 }
 
 .brand {
