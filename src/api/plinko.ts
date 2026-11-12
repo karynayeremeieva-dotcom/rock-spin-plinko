@@ -20,6 +20,13 @@ export interface PlayRequest {
   bet: Cents;
   rows: number;
   risk: Risk;
+  /**
+   * Unique per drop. A real server should treat a repeated id as the same round, so a
+   * retry never takes the stake twice. The fake server ignores it.
+   */
+  requestId?: string;
+  /** Aborted when the game stops waiting (timeout); a real fetch should pass it on. */
+  signal?: AbortSignal;
 }
 
 export interface PlayResult {

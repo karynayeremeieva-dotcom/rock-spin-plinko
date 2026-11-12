@@ -13,15 +13,29 @@ import {
   type AutoProgress,
   type AutoStopReason,
 } from './auto';
-import { MIN_BET, validateBet, type BetError } from './bet';
+import { MAX_BET, MIN_BET, validateBet, type BetError } from './bet';
 import type { Cents } from './money';
-import { isRisk, isRows, type Risk } from './multipliers';
+import { getTable, isRisk, isRows, type Risk } from './multipliers';
+import { cryptoRandomBytes, randomId } from './rng';
+import { verifyRound } from './round';
 
 export const INITIAL_BALANCE: Cents = 100_000; // 1 000.00 RC
 export const MAX_BALLS = 50;
 export const HISTORY_LIMIT = 50;
 /** First-visit row count: a balanced board; players can go 8–16. */
 export const DEFAULT_ROWS = 12;
+/** How long to wait for `play` before giving up and refunding the stake. */
+export const PLAY_TIMEOUT_MS = 10_000;
+/**
+ * Safety net: a ball the board never reported as landed (a rendering failure) is credited
+ * after this long. A real flight takes 2–3 s, so this never races the animation.
+ */
+export const LAND_TIMEOUT_MS = 20_000;
+
+/** `play` failed in a way the game noticed itself: timeout or an inconsistent answer. */
+export class RoundError extends Error {
+  override name = 'RoundError';
+}
 
 export interface Ball {
   id: string;
@@ -92,6 +106,11 @@ export interface PersistedGame {
 export interface GameDeps {
   play: PlayFn;
   now?: () => number;
+  /** Table the server's answers are checked against (the active config by default). */
+  getTable?: (rows: number, risk: Risk) => readonly number[];
+  /** Overrides for tests. */
+  playTimeoutMs?: number;
+  landTimeoutMs?: number;
 }
 
 export class PlinkoGame {
@@ -101,6 +120,11 @@ export class PlinkoGame {
   private readonly eventListeners = new Set<(event: GameEvent) => void>();
   private readonly play: PlayFn;
   private readonly now: () => number;
+  private readonly tableFor: (rows: number, risk: Risk) => readonly number[];
+  private readonly playTimeoutMs: number;
+  private readonly landTimeoutMs: number;
+  /** Fallback timers per ball on the board (see LAND_TIMEOUT_MS). */
+  private readonly landTimers = new Map<string, ReturnType<typeof setTimeout>>();
   private autoTimer: ReturnType<typeof setTimeout> | null = null;
   private autoSessionCounter = 0;
   /** Sum of stakes of requests still waiting for `play`. */
@@ -109,10 +133,16 @@ export class PlinkoGame {
   constructor(deps: GameDeps, saved?: Partial<PersistedGame>) {
     this.play = deps.play;
     this.now = deps.now ?? Date.now;
+    this.tableFor = deps.getTable ?? getTable;
+    this.playTimeoutMs = deps.playTimeoutMs ?? PLAY_TIMEOUT_MS;
+    this.landTimeoutMs = deps.landTimeoutMs ?? LAND_TIMEOUT_MS;
     const balance = isNonNegativeInt(saved?.balance) ? saved.balance : INITIAL_BALANCE;
     this.state = {
       balance,
-      bet: isNonNegativeInt(saved?.bet) && saved.bet >= MIN_BET ? saved.bet : 100,
+      bet:
+        isNonNegativeInt(saved?.bet) && saved.bet >= MIN_BET && saved.bet <= MAX_BET
+          ? saved.bet
+          : 100,
       rows: isRows(saved?.rows) ? saved.rows : DEFAULT_ROWS,
       risk: isRisk(saved?.risk) ? saved.risk : 'medium',
       pending: 0,
@@ -234,17 +264,18 @@ export class PlinkoGame {
       })),
     });
 
-    return this.play({ bet, rows, risk }).then(
+    return this.request({ bet, rows, risk }).then(
       (result) => {
         this.pendingStake -= bet;
         const ball: Ball = { id: result.id, bet, rows, risk, result, autoSession };
         this.balls.set(ball.id, ball);
+        this.armLandTimer(ball.id);
         this.update({ pending: this.state.pending - 1, balls: this.balls.size });
         this.emit({ type: 'ball', ball });
         return { ok: true, ball } as const;
       },
       (error: unknown) => {
-        // Server refused or network failed: the stake comes back.
+        // Server refused, network failed, timed out or sent nonsense: the stake comes back.
         this.pendingStake -= bet;
         this.update({
           balance: this.state.balance + bet,
@@ -264,11 +295,51 @@ export class PlinkoGame {
     );
   }
 
+  /**
+   * One call to `play`, guarded: a unique request id, a timeout that aborts the request,
+   * and a check that the answer is consistent with the request and the table, because
+   * the board animates `path` while the balance pays `payout`.
+   */
+  private request(req: { bet: Cents; rows: number; risk: Risk }) {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new RoundError(`No answer from the server in ${this.playTimeoutMs} ms`));
+      }, this.playTimeoutMs);
+    });
+    const answer = this.play({
+      ...req,
+      requestId: randomId(cryptoRandomBytes),
+      signal: controller.signal,
+    }).then((result) => {
+      const problem = verifyRound(result, req.bet, this.tableFor(req.rows, req.risk));
+      if (problem) throw new RoundError(`Invalid server answer: ${problem}`);
+      if (this.balls.has(result.id)) throw new RoundError(`Duplicate round id ${result.id}`);
+      return result;
+    });
+    return Promise.race([answer, timeout]).finally(() => clearTimeout(timer));
+  }
+
+  private armLandTimer(id: string) {
+    const timer = setTimeout(() => {
+      this.landTimers.delete(id);
+      if (!this.balls.has(id)) return;
+      // A hidden page pauses the flight: wait for it rather than paying early.
+      if (this.state.paused) this.armLandTimer(id);
+      else this.land(id);
+    }, this.landTimeoutMs);
+    this.landTimers.set(id, timer);
+  }
+
   /** Called by the board when a ball reaches its bin. Credits the payout. Idempotent. */
   land(id: string): HistoryEntry | null {
     const ball = this.balls.get(id);
     if (!ball) return null;
     this.balls.delete(id);
+    clearTimeout(this.landTimers.get(id));
+    this.landTimers.delete(id);
 
     const { payout, multiplier, bin } = ball.result;
     const entry: HistoryEntry = {
@@ -414,6 +485,8 @@ export class PlinkoGame {
 
   dispose(): void {
     this.clearAutoTimer();
+    this.landTimers.forEach((timer) => clearTimeout(timer));
+    this.landTimers.clear();
     this.listeners.clear();
     this.eventListeners.clear();
   }

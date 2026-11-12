@@ -4,21 +4,28 @@ import type { AutoConfig } from './auto';
 import { calcPayout } from './money';
 import { DEFAULT_ROWS, INITIAL_BALANCE, MAX_BALLS, PlinkoGame, type GameState } from './game';
 
-/** Server stub that answers instantly with the given multipliers, in order, then 1×. */
-function scriptedPlay(multipliers: number[] = []): PlayFn {
+/**
+ * Server stub that answers instantly with the given multipliers, in order, then 1×.
+ * Every ball lands in bin 0, and the table the game checks answers against says bin 0
+ * pays exactly that multiplier, so the answers are consistent.
+ */
+function scripted(multipliers: number[] = []) {
   let n = 0;
-  return ({ bet, rows }) => {
-    const multiplier = multipliers[n] ?? 1;
+  let current = 1;
+  const play: PlayFn = ({ bet, rows }) => {
+    current = multipliers[n] ?? 1;
     n += 1;
     const result: PlayResult = {
       id: `ball-${n}`,
       path: Array.from({ length: rows }, () => 0 as const),
       bin: 0,
-      multiplier,
-      payout: calcPayout(bet, multiplier),
+      multiplier: current,
+      payout: calcPayout(bet, current),
     };
     return Promise.resolve(result);
   };
+  const getTable = (rows: number) => Array.from({ length: rows + 1 }, () => current);
+  return { play, getTable };
 }
 
 function balanceAddsUp({ balance, ledger }: GameState) {
@@ -27,7 +34,7 @@ function balanceAddsUp({ balance, ledger }: GameState) {
 
 describe('manual drops', () => {
   it('debits on drop and credits on landing', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay([5.6]) });
+    const game = new PlinkoGame(scripted([5.6]));
     game.setBet(1_000);
     const promise = game.drop();
     expect(game.getState().balance).toBe(INITIAL_BALANCE - 1_000);
@@ -50,7 +57,7 @@ describe('manual drops', () => {
   });
 
   it('landing twice pays once', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay([2]) });
+    const game = new PlinkoGame(scripted([2]));
     const r = await game.drop();
     if (!r.ok) throw new Error('drop failed');
     game.land(r.ball.id);
@@ -59,7 +66,7 @@ describe('manual drops', () => {
   });
 
   it('fast clicks never push the balance below zero', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() }, { balance: 350, bet: 100 });
+    const game = new PlinkoGame(scripted(), { balance: 350, bet: 100 });
     const results = await Promise.all(Array.from({ length: 20 }, () => game.drop()));
     expect(results.filter((r) => r.ok)).toHaveLength(3);
     expect(results.filter((r) => !r.ok && r.reason === 'insufficient')).toHaveLength(17);
@@ -67,7 +74,7 @@ describe('manual drops', () => {
   });
 
   it(`allows at most ${MAX_BALLS} balls at once`, async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() });
+    const game = new PlinkoGame(scripted());
     const results = await Promise.all(Array.from({ length: 60 }, () => game.drop()));
     expect(results.filter((r) => r.ok)).toHaveLength(MAX_BALLS);
     expect(results.filter((r) => !r.ok && r.reason === 'too_many_balls')).toHaveLength(10);
@@ -85,7 +92,7 @@ describe('manual drops', () => {
   });
 
   it('locks rows and risk while balls are in flight, but not the bet', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() });
+    const game = new PlinkoGame(scripted());
     const r = await game.drop();
     if (!r.ok) throw new Error('drop failed');
     expect(game.setRows(8)).toBe(false);
@@ -99,7 +106,7 @@ describe('manual drops', () => {
   });
 
   it('keeps the last 50 history entries, newest first', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() });
+    const game = new PlinkoGame(scripted());
     for (let i = 0; i < 60; i++) {
       const r = await game.drop();
       if (r.ok) game.land(r.ball.id);
@@ -154,7 +161,7 @@ describe('auto mode', () => {
   }
 
   it('launches exactly N balls, one per interval', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() });
+    const game = new PlinkoGame(scripted());
     autoLand(game);
     game.startAuto(auto({ rounds: 5 }));
     expect(game.getState().auto?.progress.launched).toBe(1);
@@ -171,7 +178,7 @@ describe('auto mode', () => {
   });
 
   it('stops when profit ≥ X', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay([1, 1, 3, 1, 1]) }, { bet: 1_000 });
+    const game = new PlinkoGame(scripted([1, 1, 3, 1, 1]), { bet: 1_000 });
     autoLand(game);
     game.startAuto(auto({ stopOnProfit: 1_500 }));
     await vi.advanceTimersByTimeAsync(5_000);
@@ -180,7 +187,7 @@ describe('auto mode', () => {
   });
 
   it('stops when loss ≥ Y', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay(Array(100).fill(0.5)) }, { bet: 1_000 });
+    const game = new PlinkoGame(scripted(Array(100).fill(0.5)), { bet: 1_000 });
     autoLand(game);
     game.startAuto(auto({ stopOnLoss: 2_000 }));
     await vi.advanceTimersByTimeAsync(10_000);
@@ -189,7 +196,7 @@ describe('auto mode', () => {
   });
 
   it('stops on a single win ≥ Z×', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay([1, 0.5, 26, 1]) });
+    const game = new PlinkoGame(scripted([1, 0.5, 26, 1]));
     autoLand(game);
     game.startAuto(auto({ stopOnMultiplier: 10 }));
     await vi.advanceTimersByTimeAsync(5_000);
@@ -198,10 +205,7 @@ describe('auto mode', () => {
   });
 
   it('stops when the balance runs out and never goes negative', async () => {
-    const game = new PlinkoGame(
-      { play: scriptedPlay(Array(100).fill(0.2)) },
-      { balance: 1_000, bet: 300 },
-    );
+    const game = new PlinkoGame(scripted(Array(100).fill(0.2)), { balance: 1_000, bet: 300 });
     autoLand(game);
     game.startAuto(auto({ intervalMs: 150 }));
     await vi.advanceTimersByTimeAsync(10_000);
@@ -213,7 +217,7 @@ describe('auto mode', () => {
   });
 
   it('Stop is instant: no new balls, flying balls still land and pay', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay(Array(100).fill(2)) });
+    const game = new PlinkoGame(scripted(Array(100).fill(2)));
     const flying: string[] = [];
     game.on((e) => e.type === 'ball' && flying.push(e.ball.id));
     game.startAuto(auto({ intervalMs: 150 }));
@@ -231,7 +235,7 @@ describe('auto mode', () => {
   });
 
   it('blocks manual drops, rows and risk while running', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() });
+    const game = new PlinkoGame(scripted());
     autoLand(game);
     game.startAuto(auto({}));
     await vi.advanceTimersByTimeAsync(0);
@@ -241,7 +245,7 @@ describe('auto mode', () => {
   });
 
   it('waits while the page is hidden', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() });
+    const game = new PlinkoGame(scripted());
     autoLand(game);
     game.startAuto(auto({}));
     game.setPaused(true);
@@ -254,7 +258,7 @@ describe('auto mode', () => {
   });
 
   it('waits instead of exceeding 50 balls on the board', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay() });
+    const game = new PlinkoGame(scripted());
     game.startAuto(auto({ intervalMs: 150 })); // nobody lands the balls
     await vi.advanceTimersByTimeAsync(150 * 80);
     expect(game.getState().balls).toBe(MAX_BALLS);
@@ -265,13 +269,13 @@ describe('auto mode', () => {
 
 describe('persistence', () => {
   it('saves balls in flight as landed so a reload never loses money', async () => {
-    const game = new PlinkoGame({ play: scriptedPlay([3]) }, { bet: 1_000 });
+    const game = new PlinkoGame(scripted([3]), { bet: 1_000 });
     await game.drop();
     const saved = game.toPersisted();
     expect(saved.balance).toBe(INITIAL_BALANCE + 2_000);
     expect(saved.history).toHaveLength(1);
 
-    const restored = new PlinkoGame({ play: scriptedPlay() }, saved);
+    const restored = new PlinkoGame(scripted(), saved);
     expect(restored.getState()).toMatchObject({ balance: INITIAL_BALANCE + 2_000, bet: 1_000 });
   });
 
@@ -284,7 +288,7 @@ describe('persistence', () => {
 
   it('ignores corrupted saved values', () => {
     const game = new PlinkoGame(
-      { play: scriptedPlay() },
+      scripted(),
       // @ts-expect-error -- simulating a corrupted localStorage payload
       { balance: -5, bet: 'x', rows: 99, risk: 'insane', history: 'nope' },
     );
@@ -295,5 +299,107 @@ describe('persistence', () => {
       risk: 'medium',
       history: [],
     });
+  });
+});
+
+describe('guarding the server answer', () => {
+  const answer = (patch: Partial<PlayResult>): PlayFn => {
+    return ({ bet, rows }) =>
+      Promise.resolve({
+        id: 'r1',
+        path: Array.from({ length: rows }, () => 0 as const),
+        bin: 0,
+        multiplier: 2,
+        payout: calcPayout(bet, 2),
+        ...patch,
+      });
+  };
+  const table = (rows: number) => Array.from({ length: rows + 1 }, (_, k) => (k === 0 ? 2 : 1));
+
+  it.each<[string, Partial<PlayResult>]>([
+    ['a bin that does not match the path', { bin: 3 }],
+    ['a path of the wrong length', { path: [0, 1] }],
+    ['a multiplier the table does not have', { multiplier: 1000, payout: 100_000 }],
+    ['a payout that does not match bet × multiplier', { payout: 99_999 }],
+    ['no round id', { id: '' }],
+  ])('refunds the stake on %s', async (_name, patch) => {
+    const errors: unknown[] = [];
+    const game = new PlinkoGame({ play: answer(patch), getTable: table });
+    game.on((e) => e.type === 'error' && errors.push(e.error));
+    const result = await game.drop();
+    expect(result).toEqual({ ok: false, reason: 'network' });
+    expect(game.getState()).toMatchObject({ balance: INITIAL_BALANCE, pending: 0, balls: 0 });
+    expect(balanceAddsUp(game.getState())).toBe(true);
+    expect(errors).toHaveLength(1);
+  });
+
+  it('accepts a consistent answer', async () => {
+    const game = new PlinkoGame({ play: answer({}), getTable: table });
+    expect((await game.drop()).ok).toBe(true);
+  });
+
+  it('sends a fresh request id with every drop', async () => {
+    const ids: (string | undefined)[] = [];
+    const { play, getTable } = scripted();
+    const game = new PlinkoGame({
+      play: (req) => {
+        ids.push(req.requestId);
+        return play(req);
+      },
+      getTable,
+    });
+    await game.drop();
+    await game.drop();
+    expect(ids[0]).toMatch(/^[0-9a-f]{16,}$/);
+    expect(ids[1]).not.toBe(ids[0]);
+  });
+
+  it('gives up on a silent server: refunds, aborts the request and unlocks', async () => {
+    let signal: AbortSignal | undefined;
+    const game = new PlinkoGame({
+      play: (req) => {
+        signal = req.signal;
+        return new Promise(() => {});
+      },
+      playTimeoutMs: 20,
+    });
+    const result = await game.drop();
+    expect(result).toEqual({ ok: false, reason: 'network' });
+    expect(signal?.aborted).toBe(true);
+    expect(game.getState()).toMatchObject({ balance: INITIAL_BALANCE, pending: 0 });
+    expect(game.isLocked).toBe(false);
+  });
+});
+
+describe('fallback landing', () => {
+  const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  it('credits a ball the board never reported', async () => {
+    const game = new PlinkoGame({ ...scripted([3]), landTimeoutMs: 20 });
+    const r = await game.drop();
+    expect(r.ok).toBe(true);
+    await wait(60);
+    expect(game.getState()).toMatchObject({ balls: 0, balance: INITIAL_BALANCE + 200 });
+    expect(game.isLocked).toBe(false);
+  });
+
+  it('waits while the page is hidden', async () => {
+    const game = new PlinkoGame({ ...scripted([3]), landTimeoutMs: 20 });
+    await game.drop();
+    game.setPaused(true);
+    await wait(60);
+    expect(game.getState().balls).toBe(1);
+    game.setPaused(false);
+    await wait(60);
+    expect(game.getState().balls).toBe(0);
+  });
+
+  it('does not pay twice when the board lands the ball in time', async () => {
+    const game = new PlinkoGame({ ...scripted([3]), landTimeoutMs: 20 });
+    const r = await game.drop();
+    if (!r.ok) throw new Error('drop failed');
+    game.land(r.ball.id);
+    await wait(60);
+    expect(game.getState().balance).toBe(INITIAL_BALANCE + 200);
   });
 });
