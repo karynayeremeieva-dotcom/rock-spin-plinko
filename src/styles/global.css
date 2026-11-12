@@ -90,15 +90,30 @@ button:disabled {
 }
 
 .stage--minimal {
-  --stage-dim: 0.68;
+  --stage-dim: 0;
+  /* No photo: a soft graphite room (never pure black) with the frame's two colours as
+     low pools of light on either side of the tray. */
+  background:
+    radial-gradient(60% 30% at 8% 66%, rgba(255, 140, 50, 0.2), transparent 70%),
+    radial-gradient(60% 30% at 92% 66%, rgba(60, 140, 255, 0.2), transparent 70%),
+    radial-gradient(90% 50% at 50% 30%, rgba(70, 76, 96, 0.22), transparent 75%),
+    linear-gradient(to bottom, #15171e, #0d0e13 70%, #0a0b0f);
 }
 
 @media (min-aspect-ratio: 1/1) {
   .stage,
-  .stage--guitar,
-  .stage--minimal {
+  .stage--guitar {
     background-image: url('../assets/bg-stage-wide.webp');
     background-position: center;
+  }
+
+  /* Wide screens: the tray sits low and centred, so the pools of light move in under it. */
+  .stage--minimal {
+    background:
+      radial-gradient(35% 30% at 30% 92%, rgba(255, 140, 50, 0.18), transparent 70%),
+      radial-gradient(35% 30% at 70% 92%, rgba(60, 140, 255, 0.18), transparent 70%),
+      radial-gradient(60% 55% at 50% 35%, rgba(70, 76, 96, 0.2), transparent 75%),
+      linear-gradient(to bottom, #15171e, #0d0e13 70%, #0a0b0f);
   }
 }
 
