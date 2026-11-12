@@ -138,7 +138,8 @@ export function ballSprite(ballRadius: number): HTMLCanvasElement {
   return canvas;
 }
 
-function roundRect(
+/** Rounded-rect path; ctx.roundRect() is missing in Safari before 16. */
+export function pathRoundRect(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
@@ -224,12 +225,12 @@ export function binSprites(
     body.addColorStop(0, rgb(shade(base, 0.06)));
     body.addColorStop(1, rgb(shade(base, -0.16)));
     ctx.fillStyle = body;
-    roundRect(ctx, x, y, width, height, r);
+    pathRoundRect(ctx, x, y, width, height, r);
     ctx.fill();
     ctx.shadowBlur = 0;
 
     ctx.save();
-    roundRect(ctx, x, y, width, height, r);
+    pathRoundRect(ctx, x, y, width, height, r);
     ctx.clip();
     const gloss = ctx.createLinearGradient(0, y, 0, y + height * 0.5);
     gloss.addColorStop(0, 'rgba(255, 255, 255, 0.2)');
@@ -241,7 +242,14 @@ export function binSprites(
     const rim = Math.max(1, height * 0.035);
     ctx.strokeStyle = rgb(shade(color, 0.5), lit ? 1 : 0.75);
     ctx.lineWidth = rim;
-    roundRect(ctx, x + rim / 2, y + rim / 2, width - rim, height - rim, Math.max(0, r - rim / 2));
+    pathRoundRect(
+      ctx,
+      x + rim / 2,
+      y + rim / 2,
+      width - rim,
+      height - rim,
+      Math.max(0, r - rim / 2),
+    );
     ctx.stroke();
 
     // Dark digits in the tile's own hue: high contrast on every colour, one size per row.
@@ -290,7 +298,7 @@ export function neonBinSprites(
       body.addColorStop(1, rgb(shade(color, -0.78), 0.95));
     }
     ctx.fillStyle = body;
-    roundRect(ctx, x + line / 2, y + line / 2, width - line, height - line, r);
+    pathRoundRect(ctx, x + line / 2, y + line / 2, width - line, height - line, r);
     ctx.fill();
     ctx.shadowBlur = 0;
     ctx.strokeStyle = rgb(shade(color, 0.15), lit ? 1 : 0.65);

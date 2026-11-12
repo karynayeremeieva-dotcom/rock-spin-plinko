@@ -35,6 +35,7 @@ import {
   chromeBallSprite,
   neonBinSprites,
   glowSprite,
+  pathRoundRect,
   pegSprite,
   type BinSpriteSet,
 } from './theme';
@@ -650,7 +651,7 @@ export class BoardRenderer {
         // soft contact shadow on the floor
         ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
         ctx.beginPath();
-        ctx.roundRect(x - pinW * 0.5 + pinW * 0.6, top + pinW * 0.6, pinW * 1.3, len, pinW);
+        pathRoundRect(ctx, x - pinW * 0.5 + pinW * 0.6, top + pinW * 0.6, pinW * 1.3, len, pinW);
         ctx.fill();
         // the pin: dark edges, a bright highlight on the left, like a chrome rod lit from the top-left
         const body = ctx.createLinearGradient(x - pinW / 2, 0, x + pinW / 2, 0);
@@ -660,7 +661,7 @@ export class BoardRenderer {
         body.addColorStop(1, '#2b2e33');
         ctx.fillStyle = body;
         ctx.beginPath();
-        ctx.roundRect(x - pinW / 2, top, pinW, len, pinW / 2);
+        pathRoundRect(ctx, x - pinW / 2, top, pinW, len, pinW / 2);
         ctx.fill();
         // a faint glint at the top cap
         const cap = ctx.createRadialGradient(

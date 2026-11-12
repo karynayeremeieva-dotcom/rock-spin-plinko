@@ -369,6 +369,7 @@ button:disabled {
   padding: 0;
   list-style: none;
   overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, #000 85%, transparent);
   mask-image: linear-gradient(to right, #000 85%, transparent);
 }
 
@@ -1272,7 +1273,7 @@ button:disabled {
 .bigwin__mult {
   position: relative;
   font-family: var(--font-display);
-  font-size: clamp(96px, 34vw, 200px);
+  font-size: clamp(76px, 26vw, 160px);
   font-weight: 700;
   line-height: 0.95;
   letter-spacing: 0.01em;
@@ -2084,6 +2085,8 @@ button:disabled {
   padding: 0 7px !important;
   border-radius: 6px;
   background: var(--tint) !important;
+  /* fallback for Safari before 16.2, which has no color-mix() */
+  color: #1a0f05 !important;
   color: color-mix(in srgb, var(--tint) 18%, #000) !important;
   font-weight: 800;
 }
@@ -2440,11 +2443,27 @@ button:disabled {
 }
 
 .topbar__actions {
-  align-self: stretch;
+  align-self: center;
 }
 
+/* Explicit squares matching the emblem (44px, 36px on short screens). `height: 100%` with
+   `aspect-ratio` looked right in Chrome, but iOS Safari did not count the buttons' width
+   in the bar, and the last one spilled past its right edge. */
 .topbar__actions .icon-btn {
-  width: auto;
-  height: 100%;
-  aspect-ratio: 1;
+  width: 44px;
+  height: 44px;
+}
+
+@media (max-height: 780px) {
+  .topbar__actions .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@container app (max-height: 764px) {
+  .topbar__actions .icon-btn {
+    width: 36px;
+    height: 36px;
+  }
 }
