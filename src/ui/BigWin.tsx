@@ -50,7 +50,9 @@ export function BigWin({ onHit }: { onHit: (active: boolean) => void }) {
       <div className="bigwin__flash" />
       <div className="bigwin__poster">
         <div className="bigwin__title">{title}</div>
-        <div className="bigwin__mult">{formatMultiplier(win.multiplier, true)}</div>
+        <div className="bigwin__mult" data-text={formatMultiplier(win.multiplier, true)}>
+          {formatMultiplier(win.multiplier, true)}
+        </div>
         <div className="bigwin__payout">+{money(win.payout)} RC</div>
       </div>
     </div>

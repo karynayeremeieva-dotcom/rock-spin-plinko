@@ -1270,15 +1270,46 @@ button:disabled {
 }
 
 .bigwin__mult {
+  position: relative;
   font-family: var(--font-display);
-  font-size: clamp(84px, 30vw, 180px);
+  font-size: clamp(96px, 34vw, 200px);
   font-weight: 700;
   line-height: 0.95;
-  background: linear-gradient(180deg, #fff6d8 0%, #ffc24a 35%, #ff6a1a 70%, #c7220c 100%);
+  letter-spacing: 0.01em;
+  /* white-hot core into gold, with a light sweep that crosses it once */
+  background:
+    linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.95) 48%, transparent 60%) -150%
+      0 / 250% 100% no-repeat,
+    linear-gradient(180deg, #ffffff 0%, #fff3c4 30%, #ffc94a 62%, #ff8a1f 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 24px rgba(255, 106, 26, 0.75)) drop-shadow(0 4px 0 #3a1204);
+  animation: bigwin-shine 2.2s ease-out 0.25s forwards;
+}
+
+/* Poster-style outline and extrusion behind the bright face: readable on any board. */
+.bigwin__mult::before {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  color: #1a0903;
+  -webkit-text-stroke: 0.09em #1a0903;
+  text-shadow:
+    0 0.03em 0 #3d1406,
+    0 0.06em 0 #3d1406,
+    0 0.09em 0 #2a0c03,
+    0 0.12em 0.06em rgba(0, 0, 0, 0.6),
+    0 0 0.35em rgba(255, 120, 30, 0.85);
+}
+
+/* A dark halo behind the whole poster keeps it off the bright board and flash. */
+.bigwin__poster::before {
+  content: '';
+  position: absolute;
+  inset: -20% -30%;
+  z-index: -2;
+  background: radial-gradient(closest-side, rgba(8, 4, 2, 0.72), transparent);
 }
 
 .bigwin__payout {
@@ -1290,6 +1321,16 @@ button:disabled {
   font-size: 22px;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
+}
+
+.bigwin--epic .bigwin__mult::before {
+  text-shadow:
+    0 0.03em 0 #10234d,
+    0 0.06em 0 #10234d,
+    0 0.09em 0 #0a1633,
+    0 0.12em 0.06em rgba(0, 0, 0, 0.6),
+    -0.08em 0 0.35em rgba(255, 120, 30, 0.9),
+    0.08em 0 0.35em rgba(61, 139, 255, 0.9);
 }
 
 .bigwin--mega .bigwin__title,
@@ -1306,6 +1347,14 @@ button:disabled {
     rgba(47, 125, 255, 0.15) 75%,
     transparent
   );
+}
+
+@keyframes bigwin-shine {
+  to {
+    background-position:
+      250% 0,
+      0 0;
+  }
 }
 
 @keyframes bigwin-flash {
