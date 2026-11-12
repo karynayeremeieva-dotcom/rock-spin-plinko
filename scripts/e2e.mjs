@@ -56,6 +56,11 @@ async function open(browser, base, { width, height, query = '' }) {
   page.on('console', (m) => m.type() === 'error' && consoleErrors.push(m.text()));
   page.on('pageerror', (e) => consoleErrors.push(e.message));
   await page.setViewport({ width, height, deviceScaleFactor: 2 });
+  // The game picks its language from the browser; pin Russian so labels match on any machine.
+  await page.evaluateOnNewDocument(() => {
+    Object.defineProperty(navigator, 'language', { get: () => 'ru-RU' });
+    Object.defineProperty(navigator, 'languages', { get: () => ['ru-RU', 'ru'] });
+  });
   await page.goto(base + query, { waitUntil: 'networkidle0' });
   await sleep(1200);
   await clickText(page, '^(Пропустить|Skip)$');
