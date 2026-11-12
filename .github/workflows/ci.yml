@@ -1,0 +1,35 @@
+name: CI
+
+# Every push and pull request runs the same checks as `npm run check`, a production build
+# and the acceptance checklist in Chrome (`npm run e2e`). Deployment stays manual
+# (`npm run deploy` → gh-pages branch), so this workflow only reads the repository.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Types, lint, formatting, multiplier tables up to date, unit tests.
+      - run: npm run check
+      - run: npm run build
+      # Checklist 8.2 through the UI; ubuntu-latest ships Google Chrome.
+      - run: npm run e2e
+        env:
+          CHROME_PATH: /usr/bin/google-chrome

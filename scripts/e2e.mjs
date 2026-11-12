@@ -258,7 +258,12 @@ async function main() {
     base = `http://localhost:${PORT}/`;
   }
   console.log(`E2E against ${base}\n`);
-  const browser = await puppeteer.launch({ executablePath: CHROME, headless: true });
+  const browser = await puppeteer.launch({
+    executablePath: CHROME,
+    headless: true,
+    // GitHub's Ubuntu runners block Chrome's sandbox; locally it stays on.
+    args: process.env.CI ? ['--no-sandbox'] : [],
+  });
   try {
     await layouts(browser, base);
     await language(browser, base);
