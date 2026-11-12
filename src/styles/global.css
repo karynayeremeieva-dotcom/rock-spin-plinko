@@ -1439,8 +1439,34 @@ button:disabled {
   text-align: right;
 }
 
+/* Four even columns: bin | chance | multiplier (centred field) | contribution. */
+.dev__table {
+  table-layout: fixed;
+}
+
+.dev__table th:nth-child(1) {
+  width: 16%;
+}
+
+.dev__table th:nth-child(2),
+.dev__table th:nth-child(4) {
+  width: 28%;
+}
+
+.dev__table th:nth-child(3),
+.dev__table td:nth-child(3) {
+  text-align: center;
+}
+
+.dev__table th:nth-child(2),
+.dev__table td:nth-child(2) {
+  padding-right: 16px;
+}
+
 .dev__input {
   width: 90px;
+  max-width: 100%;
+  text-align: center;
   height: 30px;
   padding: 0 8px;
   border-radius: 7px;
