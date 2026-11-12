@@ -208,7 +208,7 @@ export function computeCabinetGeometry(
     const { topY, rowGap, free } = layoutFor(s);
     if (free < ROW_GAP_RATIO * s || (rows + 1.2) * s > shelfWidth) return false;
     for (let r = 0; r < rows; r++) {
-      const half = ((r + 2) / 2 + PEG_EDGE) * s;
+      const half = ((r + 2) / 2 + (layout.pegEdge ?? PEG_EDGE)) * s;
       const [left, right] = edgesAt(topY + r * rowGap);
       if (centerX - half < left || centerX + half > right) return false;
     }

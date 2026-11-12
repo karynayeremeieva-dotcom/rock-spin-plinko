@@ -138,6 +138,8 @@ describe.each([
     for (const [w, h] of sizes) {
       const { geometry: g, cabinet: c } = computeCabinetGeometry(w, h, rows, layout);
       const { field, shelf } = layout;
+      // pegs keep at least (their design's edge margin − a hair) from the plate's sides
+      const margin = Math.min(0.55, (layout.pegEdge ?? 0.6) - 0.05);
       const fieldEdge = (y: number, side: 'left' | 'right') => {
         const t = (y - (c.y + field.top * c.h)) / ((field.bottom - field.top) * c.h);
         const top = side === 'left' ? field.leftTop : field.rightTop;
@@ -148,10 +150,10 @@ describe.each([
       expect(g.topY).toBeGreaterThanOrEqual(c.y + field.top * c.h - 1e-6);
       for (let r = 0; r < rows; r++) {
         const y = pegY(g, r);
-        expect(pegX(g, r, 0) - g.spacing * 0.55).toBeGreaterThanOrEqual(
+        expect(pegX(g, r, 0) - g.spacing * margin).toBeGreaterThanOrEqual(
           fieldEdge(y, 'left') - 1e-6,
         );
-        expect(pegX(g, r, pegCount(r) - 1) + g.spacing * 0.55).toBeLessThanOrEqual(
+        expect(pegX(g, r, pegCount(r) - 1) + g.spacing * margin).toBeLessThanOrEqual(
           fieldEdge(y, 'right') + 1e-6,
         );
       }
