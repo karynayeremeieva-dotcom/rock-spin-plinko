@@ -72,10 +72,9 @@ export const CABINET_URL: string = cabinetUrl;
 /**
  * Second design, the classic look: a black obsidian triangle in a mirror-chrome bevel with
  * light inlaid in it, amber on the left and blue on the right, and a chrome-rimmed tray for
- * the bins. The playfield ends at the inner edge of the bevel's lit facet on the left (the
- * art is lit unevenly, the right facet is darker), mirrored to the right, and the pegs run
- * close to it. Measured on `art/cabinet-minimal.png` (1024×1290, cropped from
- * `art/cabinet-minimal-source.webp`). The pyramid sits on the tray and its row gap matches
+ * the bins. The art's grey inner facet is painted out, so the black plate runs right up to
+ * the lit bevel and the playfield ends there. Measured on `art/cabinet-minimal.png`
+ * (1024×1290, cropped from `art/cabinet-minimal-source.webp`). The pyramid sits on the tray and its row gap matches
  * the sides' slope, so the rows run parallel to the bevel with an even margin.
  */
 export const MINIMAL_LAYOUT: CabinetLayout = {
@@ -83,10 +82,10 @@ export const MINIMAL_LAYOUT: CabinetLayout = {
   field: {
     top: 0.1318,
     bottom: 0.8574,
-    leftTop: 0.4898,
-    rightTop: 0.5121,
-    leftBottom: 0.1205,
-    rightBottom: 0.8805,
+    leftTop: 0.4771,
+    rightTop: 0.5248,
+    leftBottom: 0.0751,
+    rightBottom: 0.9269,
     corner: 4 / 1290,
     topCorner: 4 / 1290,
   },
@@ -98,7 +97,7 @@ export const MINIMAL_LAYOUT: CabinetLayout = {
   binsFillShelf: true,
   // the bevelled frame must not be distorted
   maxStretch: 1,
-  pegEdge: 0.32,
+  pegEdge: 0.5,
 };
 
 export const CABINETS: Record<Skin, { url: string; layout: CabinetLayout }> = {
