@@ -17,6 +17,7 @@
     "check": "tsc -b && eslint . && prettier --check . && node scripts/generate-multipliers.mjs --check && vitest run",
     "perf": "node scripts/perf.mjs",
     "perf:soak": "node scripts/perf.mjs --soak",
+    "e2e": "node scripts/e2e.mjs",
     "deploy": "node scripts/deploy.mjs"
   },
   "dependencies": {
