@@ -20,7 +20,7 @@ import { TopBar } from './ui/TopBar';
 const DevPanel = lazy(() => import('./dev/DevPanel'));
 const params = new URLSearchParams(window.location.search);
 const DEV_MODE = params.get('dev') === '1';
-/** ?skin=guitar|amp opens a given board design (and remembers it). */
+/** ?skin=guitar|minimal opens a given board design (and remembers it). */
 const URL_SKIN = params.get('skin');
 
 export function App() {

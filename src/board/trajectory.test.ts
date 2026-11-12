@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { createFakeServer } from '../api/plinko';
 import { ROW_OPTIONS } from '../core/multipliers';
 import type { Direction } from '../core/rng';
-import { AMP_LAYOUT, CABINET_LAYOUT } from './cabinet';
+import { CABINET_LAYOUT, MINIMAL_LAYOUT } from './cabinet';
 import {
   binAt,
   binCenterX,
@@ -125,7 +125,7 @@ describe('trajectory', () => {
 
 describe.each([
   ['guitar', CABINET_LAYOUT],
-  ['amp', AMP_LAYOUT],
+  ['minimal', MINIMAL_LAYOUT],
 ] as const)('cabinet layout: %s', (_name, layout) => {
   const sizes: [number, number][] = [
     [370, 470],

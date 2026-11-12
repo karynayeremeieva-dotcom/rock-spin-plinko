@@ -44,7 +44,7 @@ describe('storage', () => {
     const prefs: Prefs = {
       sound: false,
       lang: 'en',
-      skin: 'amp',
+      skin: 'minimal',
       auto: { ...DEFAULT_PREFS.auto, rounds: 0, stopOnMultiplier: 10 },
     };
     writeSave(storage, { game: game.toPersisted(), prefs });

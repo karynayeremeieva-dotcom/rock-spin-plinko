@@ -3,8 +3,8 @@
  * and bin shelf are, as fractions of the image. Measured on `art/cabinet-guitar.png`
  * (1016×1414, cropped to the guitar from `art/cabinet-guitar-source.webp`).
  */
-import ampUrl from '../assets/cabinet-amp.webp';
 import cabinetUrl from '../assets/cabinet.webp';
+import minimalUrl from '../assets/cabinet-minimal.webp';
 import type { Skin } from '../core/storage';
 
 export interface CabinetLayout {
@@ -54,29 +54,31 @@ export const CABINET_LAYOUT: CabinetLayout = {
 export const CABINET_URL: string = cabinetUrl;
 
 /**
- * Second design: a guitar amp head (tolex, gold piping, tubes over the spawn point).
- * Measured on `art/cabinet-amp.png` (1024×1300, cropped from `art/cabinet-amp-source.webp`).
+ * Second design, the classic look: a flat smoked-glass triangle with one thin neon edge
+ * (orange to blue) and a glass tray for the bins. Measured on `art/cabinet-minimal.png`
+ * (964×880, cropped from `art/cabinet-minimal-source.webp`). The flat art is drawn stretched
+ * to 964×1300, so the pyramid gets the tall phone screen.
  */
-export const AMP_LAYOUT: CabinetLayout = {
-  aspect: 1024 / 1300,
+export const MINIMAL_LAYOUT: CabinetLayout = {
+  aspect: 964 / 1300,
   field: {
-    top: 0.0885,
-    bottom: 0.8459,
-    leftTop: 0.164,
-    rightTop: 0.831,
-    leftBottom: 0.0625,
-    rightBottom: 0.9385,
-    corner: 8 / 1300,
-    topCorner: 8 / 1300,
+    top: 0.1136,
+    bottom: 0.8693,
+    leftTop: 0.4699,
+    rightTop: 0.5301,
+    leftBottom: 0.0581,
+    rightBottom: 0.9357,
+    corner: 4 / 1300,
+    topCorner: 30 / 1300,
   },
-  channels: { top: 0.8281, bottom: 0.8459 },
-  shelf: { top: 0.8577, bottom: 0.9227, left: 0.049, right: 0.952 },
+  channels: { top: 0.8557, bottom: 0.8693 },
+  shelf: { top: 0.883, bottom: 0.9432, left: 0.0643, right: 0.9357 },
   maxOverflow: 1,
 };
 
 export const CABINETS: Record<Skin, { url: string; layout: CabinetLayout }> = {
   guitar: { url: cabinetUrl, layout: CABINET_LAYOUT },
-  amp: { url: ampUrl, layout: AMP_LAYOUT },
+  minimal: { url: minimalUrl, layout: MINIMAL_LAYOUT },
 };
 
 /** The art carries its own colour; code draws only the steel bin dividers. */

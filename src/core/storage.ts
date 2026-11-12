@@ -10,10 +10,10 @@ export const STORAGE_KEY = 'rockspin.plinko.v1';
 
 export type Lang = 'ru' | 'en';
 
-/** Two board designs: a V-shaped guitar body or a guitar amp. */
-export type Skin = 'guitar' | 'amp';
+/** Two board designs: a V-shaped guitar body or a minimalist glass triangle. */
+export type Skin = 'guitar' | 'minimal';
 
-export const isSkin = (v: unknown): v is Skin => v === 'guitar' || v === 'amp';
+export const isSkin = (v: unknown): v is Skin => v === 'guitar' || v === 'minimal';
 
 export interface Prefs {
   sound: boolean;

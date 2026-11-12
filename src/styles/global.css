@@ -83,19 +83,19 @@ button:disabled {
   background: url('../assets/bg-guitar.webp') center top / cover no-repeat var(--bg);
 }
 
-/* Each board design has its own stage: light beams behind the guitar, sparks around the amp. */
+/* Each board design has its own stage: light beams behind the guitar, sparks around the glass triangle. */
 .stage--guitar {
   background-image: url('../assets/bg-guitar.webp');
 }
 
-.stage--amp {
-  background-image: url('../assets/bg-amp.webp');
+.stage--minimal {
+  background-image: url('../assets/bg-minimal.webp');
 }
 
 @media (min-aspect-ratio: 1/1) {
   .stage,
   .stage--guitar,
-  .stage--amp {
+  .stage--minimal {
     background-image: url('../assets/bg-stage-wide.webp');
     background-position: center;
   }

@@ -12,7 +12,7 @@ import { binTint } from './format';
 import { useGame, useGameState } from './game-context';
 import { Sheet } from './Sheet';
 
-const SKINS: readonly Skin[] = ['guitar', 'amp'];
+const SKINS: readonly Skin[] = ['guitar', 'minimal'];
 
 const RISK_SHORT: Record<string, keyof Dictionary> = {
   low: 'riskLow',
@@ -192,7 +192,7 @@ export function MenuSheet({ onClose, onRules }: { onClose: () => void; onRules: 
                   updatePrefs({ skin });
                 }}
               >
-                {skin === 'guitar' ? t.skinGuitar : t.skinAmp}
+                {skin === 'guitar' ? t.skinGuitar : t.skinMinimal}
               </button>
             ))}
           </div>
