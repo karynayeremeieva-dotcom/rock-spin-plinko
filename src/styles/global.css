@@ -83,13 +83,14 @@ button:disabled {
   background: url('../assets/bg-guitar.webp') center top / cover no-repeat var(--bg);
 }
 
-/* Each board design has its own stage: light beams behind the guitar, sparks around the glass triangle. */
+/* Both designs stand under the same light beams; the minimalist one dims them further,
+   so the thin neon edge stays the brightest line on screen. */
 .stage--guitar {
   background-image: url('../assets/bg-guitar.webp');
 }
 
 .stage--minimal {
-  background-image: url('../assets/bg-minimal.webp');
+  --stage-dim: 0.68;
 }
 
 @media (min-aspect-ratio: 1/1) {

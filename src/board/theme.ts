@@ -309,8 +309,8 @@ export function neonBinSprites(
       body.addColorStop(0, rgb(shade(color, 0.25), 0.95));
       body.addColorStop(1, rgb(color, 0.85));
     } else {
-      body.addColorStop(0, rgb(color, 0.2));
-      body.addColorStop(1, 'rgba(8, 9, 14, 0.85)');
+      body.addColorStop(0, rgb(shade(color, -0.55), 0.95));
+      body.addColorStop(1, rgb(shade(color, -0.78), 0.95));
     }
     ctx.fillStyle = body;
     roundRect(ctx, x + line / 2, y + line / 2, width - line, height - line, r);
@@ -324,11 +324,23 @@ export function neonBinSprites(
     ctx.font = `800 ${size}px ${fontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowColor = rgb(color, 1);
-    ctx.shadowBlur = lit ? 0 : size * 0.45;
-    ctx.fillStyle = lit ? rgb(shade(color, -0.8)) : rgb(shade(color, 0.55));
-    ctx.fillText(binLabel(label), x + width / 2, y + height * 0.53);
-    ctx.shadowBlur = 0;
+    const text = binLabel(label);
+    const tx = x + width / 2;
+    const ty = y + height * 0.53;
+    if (lit) {
+      ctx.fillStyle = rgb(shade(color, -0.82));
+      ctx.fillText(text, tx, ty);
+    } else {
+      // A tight coloured glow behind, then crisp near-white digits on top: readable first,
+      // neon second.
+      ctx.shadowColor = rgb(color, 0.9);
+      ctx.shadowBlur = size * 0.35;
+      ctx.fillStyle = rgb(color);
+      ctx.fillText(text, tx, ty);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = rgb(shade(color, 0.86));
+      ctx.fillText(text, tx, ty);
+    }
     return canvas;
   };
   return { normal: draw(false), lit: draw(true), pad };
