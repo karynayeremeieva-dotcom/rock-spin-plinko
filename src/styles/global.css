@@ -106,9 +106,11 @@ button:disabled {
   content: '';
   position: absolute;
   inset: 0;
+  /* A flat dark veil over the photo: the stage lights stay, but never outshine the board. */
   background:
     radial-gradient(120% 90% at 50% 40%, transparent 55%, rgba(6, 6, 8, 0.55)),
-    linear-gradient(to bottom, transparent 70%, rgba(6, 6, 8, 0.8));
+    linear-gradient(to bottom, transparent 70%, rgba(6, 6, 8, 0.8)),
+    linear-gradient(rgba(6, 6, 8, var(--stage-dim, 0.5)), rgba(6, 6, 8, var(--stage-dim, 0.5)));
 }
 
 /* ---------- layout: phone first ---------- */
