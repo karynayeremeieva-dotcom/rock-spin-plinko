@@ -86,7 +86,7 @@ button:disabled {
 /* Both designs stand under the same light beams; the minimalist one dims them further,
    so the thin neon edge stays the brightest line on screen. */
 .stage--guitar {
-  --stage-dim: 0.72;
+  --stage-dim: 0.84;
   background-image: url('../assets/bg-guitar.webp');
 }
 
