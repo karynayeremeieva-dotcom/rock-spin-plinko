@@ -73,13 +73,13 @@ function Screen({
 }) {
   const { t } = useI18n();
   const game = useGame();
-  const { notify } = useApp();
+  const { notify, prefs } = useApp();
   const [hit, setHit] = useState(false);
   useGameNotices(game, t, notify);
 
   return (
     <>
-      <div className={`stage ${hit ? 'stage--hit' : ''}`} aria-hidden="true" />
+      <div className={`stage stage--${prefs.skin} ${hit ? 'stage--hit' : ''}`} aria-hidden="true" />
       <main className="app">
         <TopBar />
         <section className="play">
